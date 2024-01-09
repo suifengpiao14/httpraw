@@ -1,4 +1,4 @@
-package httptemplate
+package httpraw
 
 import (
 	"bufio"
@@ -16,11 +16,6 @@ import (
 	"github.com/suifengpiao14/funcs"
 )
 
-type HttpTpl interface {
-	Parse(data interface{}) (rawHttp string, err error)
-	Request(data interface{}) (r *http.Request, err error)
-}
-
 const (
 	Window_EOF           = "\r\n"
 	Linux_EOF            = "\n"
@@ -33,7 +28,7 @@ type httpTpl struct {
 }
 
 //NewHttpTpl 实例化模版请求
-func NewHttpTpl(tpl string) (HttpTpl, error) {
+func NewHttpTpl(tpl string) (*httpTpl, error) {
 	// 检测模板是否符合 http 协议
 	req, err := ReadRequest(tpl)
 	if err != nil {
