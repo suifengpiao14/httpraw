@@ -5,7 +5,8 @@
 2. 将对api接口请求转换为templateId+data 模式，能方便实现统一代理请求数据
 3. 抓包工具获取到http 协议文本后，可以解析出json结构，进一步生成基本的接口文档字段
 **核心功能：**
- 解析http协议文本生成http.Request 对象
+ 1. 解析http协议文本生成http.Request 对象
+ 2. 代理请求,支持动态脚本修改请求前后修改数据
 **周边功能：** 
 1. 使用 template/text 解析go模板，生成 http协议文本
 2. 将http.Reqeust 对象转换为RequestDTO对象,方便常规思维下修改http请求数据，构造http请求
