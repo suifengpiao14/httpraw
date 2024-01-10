@@ -125,17 +125,20 @@ type RequestDTO struct {
 	Body    string         `json:"body"`
 }
 
-//Request2RequestDTO 将 http.Request 转换为 request 结构体，方便将http raw 转换为常见的构造http请求参数
-func Request2RequestDTO(req *http.Request) (requestDTO *RequestDTO, err error) {
+//DestructReqeust 将 http.Request 转换为 request 结构体，方便将http raw 转换为常见的构造http请求参数
+func DestructReqeust(req *http.Request) (requestDTO *RequestDTO, err error) {
 	requestDTO = &RequestDTO{}
-	bodyReader, err := req.GetBody()
-	if err != nil {
-		return nil, err
+	var bodyByte []byte
+	if req.Body != nil {
+		bodyByte, err = io.ReadAll(req.Body)
+		if err != nil {
+			return nil, err
+		}
+		req.Body.Close()
+		req.Body.Close()
+		req.Body = io.NopCloser(bytes.NewReader(bodyByte))
 	}
-	bodyByte, err := io.ReadAll(bodyReader)
-	if err != nil {
-		return
-	}
+
 	req.Header.Del("Content-Length")
 	requestDTO = &RequestDTO{
 		URL:     req.URL.String(),
@@ -146,6 +149,20 @@ func Request2RequestDTO(req *http.Request) (requestDTO *RequestDTO, err error) {
 	}
 
 	return requestDTO, nil
+}
+
+func BuildRequest(requestDTO *RequestDTO) (req *http.Request, err error) {
+	req, err = http.NewRequest(requestDTO.Method, requestDTO.URL, bytes.NewReader([]byte(requestDTO.Body)))
+	if err != nil {
+		return nil, err
+	}
+	if req.Header != nil {
+		req.Header = requestDTO.Header
+	}
+	for _, cookie := range requestDTO.Cookies {
+		req.AddCookie(cookie)
+	}
+	return req, nil
 }
 
 type ResponseDTO struct {
@@ -165,7 +182,7 @@ func ParseResponse(b []byte, r *http.Request) (responseDTO *ResponseDTO, err err
 	}
 	reqData := new(RequestDTO)
 	if r != nil {
-		reqData, err = Request2RequestDTO(r)
+		reqData, err = DestructReqeust(r)
 		if err != nil {
 			return nil, err
 		}

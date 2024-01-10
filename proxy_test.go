@@ -1,14 +1,14 @@
 package httpraw_test
 
 import (
-	"context"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/suifengpiao14/httpraw"
 )
 
-func TestHttpTpl(t *testing.T) {
+func TestHttpProxy(t *testing.T) {
 	tpl := `
 	POST / HTTP/1.1
 	Host: new-merchant-api.hsb.com
@@ -25,19 +25,15 @@ func TestHttpTpl(t *testing.T) {
 		"merchantId": "141218",
 		"queryType":  "businessInfo",
 	}
-
-	httpTpl, err := httpraw.NewHttpTpl(tpl)
+	dynamicGo, err := os.ReadFile("./example/script.go")
 	if err != nil {
 		panic(err)
 	}
-	req, err := httpTpl.Request(data)
+	httpProxy, err := httpraw.NewHttpProxy(tpl, string(dynamicGo), "curlhook.NewCURLHook1")
 	if err != nil {
 		panic(err)
 	}
-
-	fmt.Printf("%#v", req)
-	//req1.Method, req1.URL.String(), req1.Body
-	body, err := httpraw.RestyRequestFn(context.Background(), req, nil)
+	body, err := httpProxy.Request(data, nil, nil)
 	if err != nil {
 		panic(err)
 	}
