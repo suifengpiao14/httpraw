@@ -1,6 +1,8 @@
 package httpraw
 
 import (
+	"bytes"
+	"encoding/json"
 	"strconv"
 	"strings"
 	"text/template"
@@ -11,17 +13,37 @@ import (
 )
 
 var TemplatefuncMap = template.FuncMap{
-	"zeroTime":        ZeroTime,
-	"currentTime":     CurrentTime,
-	"permanentTime":   PermanentTime,
-	"Contains":        strings.Contains,
-	"fen2yuan":        Fen2yuan,
-	"timestampSecond": TimestampSecond,
-	"xid":             Xid,
-	"withDefault":     WithDefault,
-	"withEmptyStr":    WithEmptyStr,
-	"withZeroNumber":  WithZeroNumber,
-	"md5":             funcs.Md5Lower,
+	"zeroTime":          ZeroTime,
+	"currentTime":       CurrentTime,
+	"permanentTime":     PermanentTime,
+	"Contains":          strings.Contains,
+	"fen2yuan":          Fen2yuan,
+	"timestampSecond":   TimestampSecond,
+	"xid":               Xid,
+	"withDefault":       WithDefault,
+	"withEmptyStr":      WithEmptyStr,
+	"withZeroNumber":    WithZeroNumber,
+	"md5":               GetMD5LOWER,
+	"toCamel":           funcs.ToCamel,
+	"toLowerCamel":      funcs.ToLowerCamel,
+	"snakeCase":         funcs.SnakeCase,
+	"jsonCompact":       JsonCompact,
+	"standardizeSpaces": funcs.StandardizeSpaces,
+}
+
+func GetMD5LOWER(s ...string) string {
+	allStr := strings.Join(s, "")
+	return funcs.Md5Lower(allStr)
+}
+func JsonCompact(src string) (out string, err error) {
+	var buff bytes.Buffer
+	err = json.Compact(&buff, []byte(src))
+	if err != nil {
+		return
+	}
+	out = buff.String()
+	return
+
 }
 
 func ZeroTime() string {
