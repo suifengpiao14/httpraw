@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/suifengpiao14/httpraw"
+	"github.com/suifengpiao14/httpraw/curlhookimpl/curlhookyaegi"
 )
 
 func TestHttpProxy(t *testing.T) {
@@ -29,7 +30,11 @@ func TestHttpProxy(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	httpProxy, err := httpraw.NewHttpProxy(tpl, string(dynamicGo))
+	yaegiHook, err := curlhookyaegi.NewCurlHookYaegi(string(dynamicGo))
+	if err != nil {
+		panic(err)
+	}
+	httpProxy, err := httpraw.NewHttpProxy(tpl, yaegiHook)
 	if err != nil {
 		panic(err)
 	}

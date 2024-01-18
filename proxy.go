@@ -3,11 +3,6 @@ package httpraw
 import (
 	"context"
 	"net/http"
-
-	"github.com/pkg/errors"
-	"github.com/suifengpiao14/httpraw/thirdlib"
-	"github.com/traefik/yaegi/interp"
-	"github.com/traefik/yaegi/stdlib"
 )
 
 // http 代理请求
@@ -26,58 +21,28 @@ func (impl EmptyCURLHookImpl) AfterFn(body []byte, scriptData map[string]interfa
 }
 
 type HttpProxy struct {
-	RawTpl        string `json:"rawTpl"`
-	DynamicScript string `json:"dynamicScript"`
-	httpTpl       *httpTpl
-	curlHook      CURLHookI
+	RawTpl string `json:"rawTpl"`
+
+	httpTpl  *httpTpl
+	curlHook CURLHookI
 }
 
-var CURLHookImplPoint = "curlhook.NewCURLHook"
-
-func NewHttpProxy(rawTpl string, dynamicScript string) (httpProxy *HttpProxy, err error) {
+func NewHttpProxy(rawTpl string, curlHook CURLHookI) (httpProxy *HttpProxy, err error) {
 	httpTpl, err := NewHttpTpl(rawTpl)
 	if err != nil {
 		return nil, err
 	}
 
 	httpProxy = &HttpProxy{
-		DynamicScript: dynamicScript,
-		RawTpl:        rawTpl,
-		httpTpl:       httpTpl,
+		RawTpl:   rawTpl,
+		httpTpl:  httpTpl,
+		curlHook: curlHook,
 	}
-	if dynamicScript == "" {
-		return httpProxy, nil
-	}
-	// 解析动态脚本
-	interpreter := interp.New(interp.Options{})
-	interpreter.Use(stdlib.Symbols)
-	interpreter.Use(thirdlib.Symbols) // 注册第三方库
-	interpreter.Use(Symbols)          //注册当前包结构体
-
-	_, err = interpreter.Eval(dynamicScript)
-	if err != nil {
-		err = errors.WithMessage(err, "init dynamic go script error")
-		return nil, err
-	}
-
-	hookImpl, err := interpreter.Eval(CURLHookImplPoint)
-	if err != nil {
-		err = errors.WithMessage(err, "dynamic script packge must curlhook and have function func NewCURLHook()httpraw.CURLHookI")
-		return nil, err
-	}
-	interfa := hookImpl.Interface()
-	curlHookImplFn, ok := interfa.(func() CURLHookI)
-	if !ok {
-		err = errors.Errorf("dynamic func %s ,must return CURLHookI implement", CURLHookImplPoint)
-		return nil, err
-	}
-
-	httpProxy.curlHook = curlHookImplFn()
 
 	return httpProxy, nil
 }
 
-//RequestDTO 数据转RequestDTO 格式
+// RequestDTO 数据转RequestDTO 格式
 func (hp HttpProxy) RequestDTO(data any) (rDTO *RequestDTO, err error) {
 	r, err := hp.httpTpl.Request(data)
 	if err != nil {
@@ -90,7 +55,7 @@ func (hp HttpProxy) RequestDTO(data any) (rDTO *RequestDTO, err error) {
 	return rDTO, nil
 }
 
-//Request 发起请求，data 是tpl中用到的数据，scriptData 是动态脚本内全局变量
+// Request 发起请求，data 是tpl中用到的数据，scriptData 是动态脚本内全局变量
 func (hp HttpProxy) Request(rDTO *RequestDTO, scriptData map[string]any, transport *http.Transport) (reqDTo *RequestDTO, out []byte, err error) {
 	reqDTo = rDTO
 	if hp.curlHook != nil {
