@@ -21,8 +21,7 @@ func (impl EmptyCURLHookImpl) AfterFn(body []byte, scriptData map[string]interfa
 }
 
 type HttpProxy struct {
-	RawTpl string `json:"rawTpl"`
-
+	RawTpl   string `json:"rawTpl"`
 	httpTpl  *httpTpl
 	curlHook CURLHookI
 }
