@@ -29,11 +29,15 @@ func TestHttpProxy(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	httpProxy, err := httpraw.NewHttpProxy(tpl, string(dynamicGo), "curlhook.NewCURLHook1")
+	httpProxy, err := httpraw.NewHttpProxy(tpl, string(dynamicGo))
 	if err != nil {
 		panic(err)
 	}
-	body, err := httpProxy.Request(data, nil, nil)
+	rDTO, err := httpProxy.RequestDTO(data)
+	if err != nil {
+		panic(err)
+	}
+	_, body, err := httpProxy.Request(rDTO, nil, nil)
 	if err != nil {
 		panic(err)
 	}

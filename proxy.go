@@ -26,31 +26,27 @@ func (impl EmptyCURLHookImpl) AfterFn(body []byte, scriptData map[string]interfa
 }
 
 type HttpProxy struct {
-	RawTpl            string `json:"rawTpl"`
-	DynamicScript     string `json:"dynamicScript"`
-	httpTpl           *httpTpl
-	curlHook          CURLHookI
-	GetCURLHookImplFn string `json:"getCURLHookImplFn"`
+	RawTpl        string `json:"rawTpl"`
+	DynamicScript string `json:"dynamicScript"`
+	httpTpl       *httpTpl
+	curlHook      CURLHookI
 }
 
-func NewHttpProxy(rawTpl string, dynamicScript string, getCURLHookImplFn string) (httpProxy *HttpProxy, err error) {
+var CURLHookImplPoint = "curlhook.NewCURLHook"
+
+func NewHttpProxy(rawTpl string, dynamicScript string) (httpProxy *HttpProxy, err error) {
 	httpTpl, err := NewHttpTpl(rawTpl)
 	if err != nil {
 		return nil, err
 	}
 
 	httpProxy = &HttpProxy{
-		DynamicScript:     dynamicScript,
-		RawTpl:            rawTpl,
-		httpTpl:           httpTpl,
-		GetCURLHookImplFn: getCURLHookImplFn,
+		DynamicScript: dynamicScript,
+		RawTpl:        rawTpl,
+		httpTpl:       httpTpl,
 	}
 	if dynamicScript == "" {
 		return httpProxy, nil
-	}
-	if getCURLHookImplFn == "" {
-		err = errors.Errorf("get CURLHook implement from dynamic script path required when dynimicScrip is: %s", dynamicScript)
-		return nil, err
 	}
 	// 解析动态脚本
 	interpreter := interp.New(interp.Options{})
@@ -64,15 +60,15 @@ func NewHttpProxy(rawTpl string, dynamicScript string, getCURLHookImplFn string)
 		return nil, err
 	}
 
-	hookImpl, err := interpreter.Eval(httpProxy.GetCURLHookImplFn)
+	hookImpl, err := interpreter.Eval(CURLHookImplPoint)
 	if err != nil {
-		err = errors.WithMessage(err, "selector fomat is packageName.getCurlHookImplFnName, for example curlhook.NewCURLHook . curlhook is dynamic script package name ,NewCURLHook is a func defined func()httpraw.CURLHookI")
+		err = errors.WithMessage(err, "dynamic script packge must curlhook and have function func NewCURLHook()httpraw.CURLHookI")
 		return nil, err
 	}
 	interfa := hookImpl.Interface()
 	curlHookImplFn, ok := interfa.(func() CURLHookI)
 	if !ok {
-		err = errors.Errorf("dynamic func %s ,must return CURLHookI implement", httpProxy.GetCURLHookImplFn)
+		err = errors.Errorf("dynamic func %s ,must return CURLHookI implement", CURLHookImplPoint)
 		return nil, err
 	}
 
@@ -81,37 +77,43 @@ func NewHttpProxy(rawTpl string, dynamicScript string, getCURLHookImplFn string)
 	return httpProxy, nil
 }
 
-//Request 发起请求，data 是tpl中用到的数据，scriptData 是动态脚本内全局变量
-func (hp HttpProxy) Request(data any, scriptData map[string]interface{}, transport *http.Transport) (out []byte, err error) {
+//RequestDTO 数据转RequestDTO 格式
+func (hp HttpProxy) RequestDTO(data any) (rDTO *RequestDTO, err error) {
 	r, err := hp.httpTpl.Request(data)
 	if err != nil {
 		return nil, err
 	}
+	rDTO, err = DestructReqeust(r)
+	if err != nil {
+		return nil, err
+	}
+	return rDTO, nil
+}
+
+//Request 发起请求，data 是tpl中用到的数据，scriptData 是动态脚本内全局变量
+func (hp HttpProxy) Request(rDTO *RequestDTO, scriptData map[string]any, transport *http.Transport) (reqDTo *RequestDTO, out []byte, err error) {
+	reqDTo = rDTO
 	if hp.curlHook != nil {
-		rDTO, err := DestructReqeust(r)
+		reqDTo, err = hp.curlHook.BeforeFn(*rDTO, scriptData) //修改请求参数
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		newRDTO, err := hp.curlHook.BeforeFn(*rDTO, scriptData)
-		if err != nil {
-			return nil, err
-		}
-		r, err = BuildRequest(newRDTO)
-		if err != nil {
-			return nil, err
-		}
+	}
+	r, err := BuildRequest(reqDTo)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	ctx := context.Background()
 	out, err = RestyRequestFn(ctx, r, transport)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if hp.curlHook != nil {
 		out, err = hp.curlHook.AfterFn(out, scriptData)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
-	return out, nil
+	return reqDTo, out, nil
 }

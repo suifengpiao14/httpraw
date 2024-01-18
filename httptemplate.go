@@ -53,7 +53,7 @@ func NewHttpTpl(tpl string) (*httpTpl, error) {
 }
 
 //Request 解析模板，生成http raw 协议文本
-func (htPt *httpTpl) Parse(data interface{}) (rawHttp string, err error) {
+func (htPt *httpTpl) Parse(data any) (rawHttp string, err error) {
 	var b bytes.Buffer
 	err = htPt.template.Execute(&b, data)
 	if err != nil {
@@ -64,7 +64,7 @@ func (htPt *httpTpl) Parse(data interface{}) (rawHttp string, err error) {
 }
 
 //Request 解析模板，生成http raw 协议文本
-func (htPt *httpTpl) Request(data interface{}) (r *http.Request, err error) {
+func (htPt *httpTpl) Request(data any) (r *http.Request, err error) {
 	rawHttp, err := htPt.Parse(data)
 	if err != nil {
 		return nil, err
