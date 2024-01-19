@@ -27,7 +27,7 @@ type httpTpl struct {
 	template *template.Template
 }
 
-//FomrmatHttpRaw 格式化http 协议模板，手写协议在空格控制方面往往不规范，提供此方法，一是供内部格式化检测，二是给外部提供格式化途径
+// FomrmatHttpRaw 格式化http 协议模板，手写协议在空格控制方面往往不规范，提供此方法，一是供内部格式化检测，二是给外部提供格式化途径
 func FomrmatHttpRaw(httpRaw string) (formatHttpRaw string, err error) {
 	httpRaw = funcs.TrimSpaces(httpRaw)
 	lineArr := strings.Split(httpRaw, Linux_EOF)
@@ -44,12 +44,12 @@ func FomrmatHttpRaw(httpRaw string) (formatHttpRaw string, err error) {
 
 	headerRaw := strings.TrimSpace(httpRaw) // 默认只有请求头
 	bodyRaw := ""                           // 默认body为
-	//bodyIndex := strings.Index(headerRaw, HTTP_HEAD_BODY_DELIM)
-	// if bodyIndex > -1 {
-	// 	headerRaw, bodyRaw = strings.TrimSpace(headerRaw[:bodyIndex]), strings.TrimSpace(headerRaw[bodyIndex:])
-	// 	bodyLen := len(bodyRaw)
-	// 	headerRaw = fmt.Sprintf("%s%sContent-Length: %d", headerRaw, Window_EOF, bodyLen)
-	// }
+	bodyIndex := strings.Index(headerRaw, HTTP_HEAD_BODY_DELIM)
+	if bodyIndex > -1 {
+		headerRaw, bodyRaw = strings.TrimSpace(headerRaw[:bodyIndex]), strings.TrimSpace(headerRaw[bodyIndex:])
+		bodyLen := len(bodyRaw)
+		headerRaw = fmt.Sprintf("%s%sContent-Length: %d", headerRaw, Window_EOF, bodyLen)
+	}
 	formatHttpRaw = fmt.Sprintf("%s%s%s", headerRaw, HTTP_HEAD_BODY_DELIM, bodyRaw)
 	// 检测模板是否符合 http 协议
 	req, err := ReadRequest(formatHttpRaw)
@@ -66,7 +66,7 @@ func FomrmatHttpRaw(httpRaw string) (formatHttpRaw string, err error) {
 	return formatHttpRaw, nil
 }
 
-//NewHttpTpl 实例化模版请求
+// NewHttpTpl 实例化模版请求
 func NewHttpTpl(tpl string) (*httpTpl, error) {
 
 	formatedTpl, err := FomrmatHttpRaw(tpl)
@@ -85,7 +85,7 @@ func NewHttpTpl(tpl string) (*httpTpl, error) {
 	return htPt, nil
 }
 
-//Request 解析模板，生成http raw 协议文本
+// Request 解析模板，生成http raw 协议文本
 func (htPt *httpTpl) Parse(data any) (rawHttp string, err error) {
 	var b bytes.Buffer
 	err = htPt.template.Execute(&b, data)
@@ -96,7 +96,7 @@ func (htPt *httpTpl) Parse(data any) (rawHttp string, err error) {
 	return rawHttp, nil
 }
 
-//Request 解析模板，生成http raw 协议文本
+// Request 解析模板，生成http raw 协议文本
 func (htPt *httpTpl) Request(data any) (r *http.Request, err error) {
 	rawHttp, err := htPt.Parse(data)
 	if err != nil {
@@ -113,7 +113,7 @@ func (htPt *httpTpl) Request(data any) (r *http.Request, err error) {
 	return r, nil
 }
 
-//ReadRequest http 文本协议格式转http.Request 对象,需要格式化文本协议，请先调用 FomrmatHttpRaw 函数
+// ReadRequest http 文本协议格式转http.Request 对象,需要格式化文本协议，请先调用 FomrmatHttpRaw 函数
 func ReadRequest(wellHttpRaw string) (req *http.Request, err error) {
 	buf := bufio.NewReader(strings.NewReader(wellHttpRaw))
 	req, err = http.ReadRequest(buf)
@@ -139,7 +139,7 @@ type RequestDTO struct {
 	Body    string         `json:"body"`
 }
 
-//DestructReqeust 将 http.Request 转换为 request 结构体，方便将http raw 转换为常见的构造http请求参数
+// DestructReqeust 将 http.Request 转换为 request 结构体，方便将http raw 转换为常见的构造http请求参数
 func DestructReqeust(req *http.Request) (requestDTO *RequestDTO, err error) {
 	requestDTO = &RequestDTO{}
 	var bodyByte []byte
