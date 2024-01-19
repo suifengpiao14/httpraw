@@ -5,19 +5,41 @@ import (
 	"net/http"
 )
 
+type BeforeFn func(r RequestDTO, scriptData map[string]interface{}) (nr *RequestDTO, err error)
+type AfterFn func(body []byte, scriptData map[string]interface{}) (newBody []byte, err error)
+
 // http 代理请求
 type CURLHookI interface {
 	BeforeFn(r RequestDTO, scriptData map[string]interface{}) (nr *RequestDTO, err error) // 请求前钩子函数,scriptData 用来传递请求时的额外数据，如循环请求时，循环次数
 	AfterFn(body []byte, scriptData map[string]interface{}) (newBody []byte, err error)   // 请求后钩子函数,scriptData 用来传递请求时的额外数据，如循环请求时，循环次数
 }
 
-type EmptyCURLHookImpl struct{}
-
-func (impl EmptyCURLHookImpl) BeforeFn(r RequestDTO, scriptData map[string]interface{}) (nr *RequestDTO, err error) {
-	return &r, nil
+//DynamicCURLHook 动态脚本实现钩子通用模型
+type DynamicCURLHook struct {
+	beforFn BeforeFn
+	afterFn AfterFn
 }
-func (impl EmptyCURLHookImpl) AfterFn(body []byte, scriptData map[string]interface{}) (newBody []byte, err error) {
-	return body, nil
+
+func (impl DynamicCURLHook) BeforeFn(r RequestDTO, scriptData map[string]interface{}) (nr *RequestDTO, err error) {
+	if impl.beforFn == nil {
+		return &r, nil
+	}
+	return impl.beforFn(r, scriptData)
+}
+func (impl DynamicCURLHook) AfterFn(body []byte, scriptData map[string]interface{}) (newBody []byte, err error) {
+	if impl.afterFn == nil {
+		return body, nil
+	}
+	return impl.afterFn(body, scriptData)
+}
+
+//NewDynamicCURLHook 创建动态库
+func NewDynamicCURLHook(beforeFn BeforeFn, afterFn AfterFn) (dynamicCURLHook *DynamicCURLHook) {
+	dynamicCURLHook = &DynamicCURLHook{
+		beforFn: beforeFn,
+		afterFn: afterFn,
+	}
+	return dynamicCURLHook
 }
 
 type HttpProxy struct {

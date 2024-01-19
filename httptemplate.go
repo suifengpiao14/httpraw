@@ -27,21 +27,54 @@ type httpTpl struct {
 	template *template.Template
 }
 
-//NewHttpTpl 实例化模版请求
-func NewHttpTpl(tpl string) (*httpTpl, error) {
+//FomrmatHttpRaw 格式化http 协议模板，手写协议在空格控制方面往往不规范，提供此方法，一是供内部格式化检测，二是给外部提供格式化途径
+func FomrmatHttpRaw(httpRaw string) (formatHttpRaw string, err error) {
+	httpRaw = funcs.TrimSpaces(httpRaw)
+	lineArr := strings.Split(httpRaw, Linux_EOF)
+	formatLineArr := make([]string, 0)
+	for _, line := range lineArr {
+		formatLine := strings.TrimSpace(line) // 去除每行的空格、制表符\r 等符号
+		formatLineArr = append(formatLineArr, formatLine)
+	}
+	httpRaw = strings.Join(formatLineArr, Window_EOF)
+	if httpRaw == "" {
+		err = errors.Errorf("http raw is empty")
+		return "", err
+	}
+
+	headerRaw := strings.TrimSpace(httpRaw) // 默认只有请求头
+	bodyRaw := ""                           // 默认body为
+	//bodyIndex := strings.Index(headerRaw, HTTP_HEAD_BODY_DELIM)
+	// if bodyIndex > -1 {
+	// 	headerRaw, bodyRaw = strings.TrimSpace(headerRaw[:bodyIndex]), strings.TrimSpace(headerRaw[bodyIndex:])
+	// 	bodyLen := len(bodyRaw)
+	// 	headerRaw = fmt.Sprintf("%s%sContent-Length: %d", headerRaw, Window_EOF, bodyLen)
+	// }
+	formatHttpRaw = fmt.Sprintf("%s%s%s", headerRaw, HTTP_HEAD_BODY_DELIM, bodyRaw)
 	// 检测模板是否符合 http 协议
-	req, err := ReadRequest(tpl)
+	req, err := ReadRequest(formatHttpRaw)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	req.Header.Del("Content-Length") // 实际请求需要重新计算长度
 	// 生成统一符合http 协议规范的模板
 	reqByte, err := httputil.DumpRequest(req, true)
 	if err != nil {
+		return "", err
+	}
+	formatHttpRaw = string(reqByte)
+	return formatHttpRaw, nil
+}
+
+//NewHttpTpl 实例化模版请求
+func NewHttpTpl(tpl string) (*httpTpl, error) {
+
+	formatedTpl, err := FomrmatHttpRaw(tpl)
+	if err != nil {
 		return nil, err
 	}
 	htPt := &httpTpl{
-		Tpl: string(reqByte),
+		Tpl: formatedTpl,
 	}
 
 	t, err := template.New("").Funcs(sprig.FuncMap()).Funcs(TemplatefuncMap).Parse(htPt.Tpl)
@@ -78,29 +111,10 @@ func (htPt *httpTpl) Request(data any) (r *http.Request, err error) {
 
 //ReadRequest http 文本协议格式转http.Request 对象
 func ReadRequest(httpRaw string) (req *http.Request, err error) {
-	httpRaw = funcs.TrimSpaces(httpRaw)
-	lineArr := strings.Split(httpRaw, Linux_EOF)
-	formatLineArr := make([]string, 0)
-	for _, line := range lineArr {
-		formatLine := strings.TrimSpace(line) // 去除每行的空格、制表符\r 等符号
-		formatLineArr = append(formatLineArr, formatLine)
-	}
-	httpRaw = strings.Join(formatLineArr, Window_EOF)
-	if httpRaw == "" {
-		err = errors.Errorf("http raw is empty")
+	formatHttpRaw, err := FomrmatHttpRaw(httpRaw)
+	if err != nil {
 		return nil, err
 	}
-
-	headerRaw := strings.TrimSpace(httpRaw) // 默认只有请求头
-	bodyRaw := ""                           // 默认body为空
-	bodyIndex := strings.Index(headerRaw, HTTP_HEAD_BODY_DELIM)
-	if bodyIndex > -1 {
-		headerRaw, bodyRaw = strings.TrimSpace(headerRaw[:bodyIndex]), strings.TrimSpace(headerRaw[bodyIndex:])
-		bodyLen := len(bodyRaw)
-		headerRaw = fmt.Sprintf("%s%sContent-Length: %d", headerRaw, Window_EOF, bodyLen)
-	}
-	formatHttpRaw := fmt.Sprintf("%s%s%s", headerRaw, HTTP_HEAD_BODY_DELIM, bodyRaw)
-
 	buf := bufio.NewReader(strings.NewReader(formatHttpRaw))
 	req, err = http.ReadRequest(buf)
 	if err != nil {
