@@ -102,20 +102,20 @@ func (htPt *httpTpl) Request(data any) (r *http.Request, err error) {
 	if err != nil {
 		return nil, err
 	}
-	r, err = ReadRequest(rawHttp)
+	wellHttpRaw, err := FomrmatHttpRaw(rawHttp)
+	if err != nil {
+		return nil, err
+	}
+	r, err = ReadRequest(wellHttpRaw)
 	if err != nil {
 		return nil, err
 	}
 	return r, nil
 }
 
-//ReadRequest http 文本协议格式转http.Request 对象
-func ReadRequest(httpRaw string) (req *http.Request, err error) {
-	formatHttpRaw, err := FomrmatHttpRaw(httpRaw)
-	if err != nil {
-		return nil, err
-	}
-	buf := bufio.NewReader(strings.NewReader(formatHttpRaw))
+//ReadRequest http 文本协议格式转http.Request 对象,需要格式化文本协议，请先调用 FomrmatHttpRaw 函数
+func ReadRequest(wellHttpRaw string) (req *http.Request, err error) {
+	buf := bufio.NewReader(strings.NewReader(wellHttpRaw))
 	req, err = http.ReadRequest(buf)
 	if err != nil {
 		return
