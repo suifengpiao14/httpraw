@@ -21,8 +21,8 @@ const (
 	undefined_selector_error_prefix = "undefined selector: "
 )
 
-//ValidateDynamicScript  用于往数据库预先写入动态脚本时验证合法性
-func ValidateDynamicScript(dynamicScript string) (err error) {
+//Validate  用于往数据库预先写入动态脚本时验证合法性
+func Validate(dynamicScript string) (err error) {
 	_, err = NewCurlHookYaegi(dynamicScript)
 	return err
 }
