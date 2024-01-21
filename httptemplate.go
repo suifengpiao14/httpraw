@@ -24,7 +24,7 @@ const (
 
 type httpTpl struct {
 	Tpl      string
-	template *template.Template
+	Template *template.Template
 }
 
 // FomrmatHttpRaw 格式化http 协议模板，手写协议在空格控制方面往往不规范，提供此方法，一是供内部格式化检测，二是给外部提供格式化途径
@@ -81,14 +81,14 @@ func NewHttpTpl(tpl string) (*httpTpl, error) {
 	if err != nil {
 		return nil, err
 	}
-	htPt.template = t
+	htPt.Template = t
 	return htPt, nil
 }
 
 // Request 解析模板，生成http raw 协议文本
 func (htPt *httpTpl) Parse(data any) (rawHttp string, err error) {
 	var b bytes.Buffer
-	err = htPt.template.Execute(&b, data)
+	err = htPt.Template.Execute(&b, data)
 	if err != nil {
 		return
 	}
