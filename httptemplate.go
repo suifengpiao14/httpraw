@@ -84,7 +84,7 @@ func NewHttpTpl(tpl string) (*httpTpl, error) {
 		Tpl: formatedTpl,
 	}
 
-	t, err := template.New("").Funcs(sprig.FuncMap()).Parse(htPt.Tpl)
+	t, err := template.New("").Funcs(sprig.FuncMap()).Funcs(TemplatefuncMap).Parse(htPt.Tpl)
 	if err != nil {
 		return nil, err
 	}
