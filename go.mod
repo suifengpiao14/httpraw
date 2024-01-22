@@ -6,7 +6,6 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/pkg/errors v0.9.1
-	github.com/rs/xid v1.3.0
 	github.com/suifengpiao14/funcs v0.0.17
 	github.com/suifengpiao14/logchan/v2 v2.0.22
 	moul.io/http2curl v1.0.0
