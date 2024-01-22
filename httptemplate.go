@@ -27,14 +27,23 @@ type httpTpl struct {
 	Template *template.Template
 }
 
+const (
+	Http_header_Content_Type = "Content-Length"
+)
+
 // FomrmatHttpRaw 格式化http 协议模板，手写协议在空格控制方面往往不规范，提供此方法，一是供内部格式化检测，二是给外部提供格式化途径
 func FomrmatHttpRaw(httpRaw string) (formatHttpRaw string, err error) {
 	httpRaw = funcs.TrimSpaces(httpRaw)
 	lineArr := strings.Split(httpRaw, Linux_EOF)
 	formatLineArr := make([]string, 0)
+	headerContentType := strings.ToLower(Http_header_Content_Type)
 	for _, line := range lineArr {
-		formatLine := strings.TrimSpace(line) // 去除每行的空格、制表符\r 等符号
+		formatLine := strings.TrimSpace(line)                                 // 去除每行的空格、制表符\r 等符号
+		if strings.Contains(strings.ToLower(formatLine), headerContentType) { // 长度每次重新计算
+			continue
+		}
 		formatLineArr = append(formatLineArr, formatLine)
+
 	}
 	httpRaw = strings.Join(formatLineArr, Window_EOF)
 	if httpRaw == "" {
@@ -48,15 +57,14 @@ func FomrmatHttpRaw(httpRaw string) (formatHttpRaw string, err error) {
 	if bodyIndex > -1 {
 		headerRaw, bodyRaw = strings.TrimSpace(headerRaw[:bodyIndex]), strings.TrimSpace(headerRaw[bodyIndex:])
 		bodyLen := len(bodyRaw)
-		headerRaw = fmt.Sprintf("%s%sContent-Length: %d", headerRaw, Window_EOF, bodyLen)
+		headerRaw = fmt.Sprintf("%s%s%s: %d", headerRaw, Window_EOF, Http_header_Content_Type, bodyLen)
 	}
 	formatHttpRaw = fmt.Sprintf("%s%s%s", headerRaw, HTTP_HEAD_BODY_DELIM, bodyRaw)
 	// 检测模板是否符合 http 协议
-	req, err := ReadRequest(formatHttpRaw)
+	req, err := readRequestNoFormat(formatHttpRaw)
 	if err != nil {
 		return "", err
 	}
-	req.Header.Del("Content-Length") // 实际请求需要重新计算长度
 	// 生成统一符合http 协议规范的模板
 	reqByte, err := httputil.DumpRequest(req, true)
 	if err != nil {
@@ -68,7 +76,6 @@ func FomrmatHttpRaw(httpRaw string) (formatHttpRaw string, err error) {
 
 // NewHttpTpl 实例化模版请求
 func NewHttpTpl(tpl string) (*httpTpl, error) {
-
 	formatedTpl, err := FomrmatHttpRaw(tpl)
 	if err != nil {
 		return nil, err
@@ -77,7 +84,7 @@ func NewHttpTpl(tpl string) (*httpTpl, error) {
 		Tpl: formatedTpl,
 	}
 
-	t, err := template.New("").Funcs(sprig.FuncMap()).Funcs(TemplatefuncMap).Parse(htPt.Tpl)
+	t, err := template.New("").Funcs(sprig.FuncMap()).Parse(htPt.Tpl)
 	if err != nil {
 		return nil, err
 	}
@@ -114,8 +121,17 @@ func (htPt *httpTpl) Request(data any) (r *http.Request, err error) {
 }
 
 // ReadRequest http 文本协议格式转http.Request 对象,需要格式化文本协议，请先调用 FomrmatHttpRaw 函数
-func ReadRequest(wellHttpRaw string) (req *http.Request, err error) {
-	buf := bufio.NewReader(strings.NewReader(wellHttpRaw))
+func ReadRequest(httpRaw string) (req *http.Request, err error) {
+	httpRaw, err = FomrmatHttpRaw(httpRaw) // 此处实现转换，确保格式ok(此处格式化，方便兼容手写)
+	if err != nil {
+		return nil, err
+	}
+	return readRequestNoFormat(httpRaw)
+}
+
+// readRequest http 文本协议格式转http.Request 对象,需要格式化文本协议，请先调用 FomrmatHttpRaw 函数
+func readRequestNoFormat(httpRaw string) (req *http.Request, err error) {
+	buf := bufio.NewReader(strings.NewReader(httpRaw))
 	req, err = http.ReadRequest(buf)
 	if err != nil {
 		return
@@ -170,8 +186,11 @@ func BuildRequest(requestDTO *RequestDTO) (req *http.Request, err error) {
 	if err != nil {
 		return nil, err
 	}
-	if req.Header != nil {
-		req.Header = requestDTO.Header
+	requestDTO.Header.Del(Http_header_Content_Type) // 删除最初的长度头，使用新计算值
+	for name, value := range requestDTO.Header {    // 循环赋值,确保不会覆盖 http.NewRequest自动生成的头信息
+		for _, v := range value {
+			req.Header.Add(name, v)
+		}
 	}
 	for _, cookie := range requestDTO.Cookies {
 		req.AddCookie(cookie)

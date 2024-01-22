@@ -80,9 +80,9 @@ func (h *LogInfoHttp) BeforeSend() {
 		req = resp.Request
 	}
 	if req != nil {
-		bodyReader, err := req.GetBody()
-		if err == nil {
-			body, err := io.ReadAll(bodyReader)
+		if req.Body != nil {
+			body, err := io.ReadAll(req.Body)
+			req.Body.Close()
 			if err == nil {
 				h.RequestBody = string(body)
 				contentType := req.Header.Get("Content-type")              //"multipart/form-data; boundary=39c610d0ba0041b90dad8f1d477a6c3dfde830e124274c9972d2668c52db"
