@@ -13,7 +13,6 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/pkg/errors"
-	"github.com/suifengpiao14/logchan/v2"
 )
 
 // RequestFn 封装http请求数据格式
@@ -40,12 +39,6 @@ func RestyRequestFn(ctx context.Context, req *http.Request, transport *http.Tran
 		req.Body = io.NopCloser(bytes.NewReader(body))
 	}
 
-	logInfo := &LogInfoHttp{
-		GetRequest: func() *http.Request { return r.RawRequest },
-	}
-	defer func() {
-		logchan.SendLogInfo(logInfo)
-	}()
 	res, err := r.Execute(strings.ToUpper(req.Method), urlstr)
 	if err != nil {
 		return nil, err
@@ -57,8 +50,6 @@ func RestyRequestFn(ctx context.Context, req *http.Request, transport *http.Tran
 		err = errors.WithMessage(err, fmt.Sprintf("%v", res.Error()))
 		return nil, err
 	}
-	logInfo.ResponseBody = string(responseBody)
-	logInfo.Response = res.RawResponse
 	return responseBody, nil
 }
 
@@ -73,7 +64,7 @@ type TransportConfig struct {
 	IdleConnTimeout     int    `json:"idleConnTimeout"`
 }
 
-//NewTransport 创建一个htt连接,兼容代理模式
+// NewTransport 创建一个htt连接,兼容代理模式
 func NewTransport(cfg *TransportConfig) *http.Transport {
 	maxIdleConns := 200
 	maxIdleConnsPerHost := 20

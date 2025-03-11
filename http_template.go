@@ -9,9 +9,9 @@ import (
 	"net/http/httputil"
 	"strconv"
 	"strings"
-	"text/template"
 
-	"github.com/Masterminds/sprig/v3"
+	"github.com/hoisie/mustache"
+
 	"github.com/pkg/errors"
 	"github.com/suifengpiao14/funcs"
 )
@@ -22,14 +22,85 @@ const (
 	HTTP_HEAD_BODY_DELIM = Window_EOF + Window_EOF
 )
 
-type httpTpl struct {
-	Tpl      string
-	Template *template.Template
-}
+type HttpTpl string
 
 const (
 	Http_header_Content_Type = "Content-Length"
 )
+
+// RenderTpl 解析模板，生成http raw 协议文本
+func (htPt HttpTpl) RenderTpl(datas ...any) (renderHttpRaw string, err error) {
+	tpl := string(htPt)
+	formatedTpl, err := FomrmatHttpRaw(tpl)
+	if err != nil {
+		return "", err
+	}
+	template, err := mustache.ParseString(formatedTpl)
+	if err != nil {
+		return "", err
+	}
+	rawHttp := template.Render(datas...)
+	renderHttpRaw, err = FomrmatHttpRaw(rawHttp)
+	if err != nil {
+		return "", err
+	}
+	return renderHttpRaw, nil
+}
+
+// Request 解析模板，生成 http.Request 协议文本
+func (htPt HttpTpl) Request(data any) (r *http.Request, err error) {
+	rawHttp, err := htPt.RenderTpl(data)
+	if err != nil {
+		return nil, err
+	}
+	r, err = ReadRequest(rawHttp)
+	if err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+func (htPt HttpTpl) ReqeustTDO(data any) (reqDTO *RequestDTO, err error) {
+	rawHttp, err := htPt.RenderTpl(data)
+	if err != nil {
+		return nil, err
+	}
+	r, err := ReadRequest(rawHttp)
+	if err != nil {
+		return nil, err
+	}
+	reqDTO, err = DestructReqeust(r)
+	if err != nil {
+		return nil, err
+	}
+	return reqDTO, nil
+}
+
+// ReadRequest http 文本协议格式转http.Request 对象,需要格式化文本协议，请先调用 FomrmatHttpRaw 函数
+func ReadRequest(httpRaw string) (req *http.Request, err error) {
+	httpRaw, err = FomrmatHttpRaw(httpRaw) // 此处实现转换，确保格式ok(此处格式化，方便兼容手写)
+	if err != nil {
+		return nil, err
+	}
+	return readRequestNoFormat(httpRaw)
+}
+
+// readRequest http 文本协议格式转http.Request 对象,需要格式化文本协议，请先调用 FomrmatHttpRaw 函数
+func readRequestNoFormat(httpRaw string) (req *http.Request, err error) {
+	buf := bufio.NewReader(strings.NewReader(httpRaw))
+	req, err = http.ReadRequest(buf)
+	if err != nil {
+		return
+	}
+	if req.URL.Scheme == "" {
+		queryPre := ""
+		if req.URL.RawQuery != "" {
+			queryPre = "?"
+		}
+		req.RequestURI = fmt.Sprintf("http://%s%s%s%s", req.Host, req.URL.Path, queryPre, req.URL.RawQuery)
+	}
+
+	return req, nil
+}
 
 // FomrmatHttpRaw 格式化http 协议模板，手写协议在空格控制方面往往不规范，提供此方法，一是供内部格式化检测，二是给外部提供格式化途径
 func FomrmatHttpRaw(httpRaw string) (formatHttpRaw string, err error) {
@@ -74,85 +145,20 @@ func FomrmatHttpRaw(httpRaw string) (formatHttpRaw string, err error) {
 	return formatHttpRaw, nil
 }
 
-// NewHttpTpl 实例化模版请求
-func NewHttpTpl(tpl string) (*httpTpl, error) {
-	formatedTpl, err := FomrmatHttpRaw(tpl)
-	if err != nil {
-		return nil, err
-	}
-	htPt := &httpTpl{
-		Tpl: formatedTpl,
-	}
-
-	t, err := template.New("").Funcs(sprig.FuncMap()).Funcs(TemplatefuncMap).Parse(htPt.Tpl)
-	if err != nil {
-		return nil, err
-	}
-	htPt.Template = t
-	return htPt, nil
-}
-
-// Request 解析模板，生成http raw 协议文本
-func (htPt *httpTpl) Parse(data any) (rawHttp string, err error) {
-	var b bytes.Buffer
-	err = htPt.Template.Execute(&b, data)
-	if err != nil {
-		return
-	}
-	rawHttp = b.String()
-	return rawHttp, nil
-}
-
-// Request 解析模板，生成http raw 协议文本
-func (htPt *httpTpl) Request(data any) (r *http.Request, err error) {
-	rawHttp, err := htPt.Parse(data)
-	if err != nil {
-		return nil, err
-	}
-	wellHttpRaw, err := FomrmatHttpRaw(rawHttp)
-	if err != nil {
-		return nil, err
-	}
-	r, err = ReadRequest(wellHttpRaw)
-	if err != nil {
-		return nil, err
-	}
-	return r, nil
-}
-
-// ReadRequest http 文本协议格式转http.Request 对象,需要格式化文本协议，请先调用 FomrmatHttpRaw 函数
-func ReadRequest(httpRaw string) (req *http.Request, err error) {
-	httpRaw, err = FomrmatHttpRaw(httpRaw) // 此处实现转换，确保格式ok(此处格式化，方便兼容手写)
-	if err != nil {
-		return nil, err
-	}
-	return readRequestNoFormat(httpRaw)
-}
-
-// readRequest http 文本协议格式转http.Request 对象,需要格式化文本协议，请先调用 FomrmatHttpRaw 函数
-func readRequestNoFormat(httpRaw string) (req *http.Request, err error) {
-	buf := bufio.NewReader(strings.NewReader(httpRaw))
-	req, err = http.ReadRequest(buf)
-	if err != nil {
-		return
-	}
-	if req.URL.Scheme == "" {
-		queryPre := ""
-		if req.URL.RawQuery != "" {
-			queryPre = "?"
-		}
-		req.RequestURI = fmt.Sprintf("http://%s%s%s%s", req.Host, req.URL.Path, queryPre, req.URL.RawQuery)
-	}
-
-	return req, nil
-}
-
 type RequestDTO struct {
 	URL     string         `json:"url"`
 	Method  string         `json:"method"`
 	Header  http.Header    `json:"header"`
 	Cookies []*http.Cookie `json:"cookies"`
 	Body    string         `json:"body"`
+}
+
+func (rDTO RequestDTO) Request() (req *http.Request, err error) {
+	req, err = BuildRequest(&rDTO)
+	if err != nil {
+		return nil, err
+	}
+	return req, nil
 }
 
 // DestructReqeust 将 http.Request 转换为 request 结构体，方便将http raw 转换为常见的构造http请求参数

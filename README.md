@@ -10,10 +10,8 @@
  2. 代理请求,支持动态脚本修改请求前后修改数据
  
 **周边功能：** 
-1. 使用 template/text 解析go模板，生成 http协议文本
+1. 使用 hoisie/mustache 解析go模板，生成 http协议文本
 2. 将http.Reqeust 对象转换为RequestDTO对象,方便常规思维下修改http请求数据，构造http请求
 3. 内置基于 github.com/go-resty/resty/v2 的请求函数RestyRequestFn
-4. 内置http 请求日志广播
 5. 内置支持http代理的http.Transport 生成函数
-6. 内置常用模板函数
-7. 实现response解析生成
+6. 实现response解析生成
