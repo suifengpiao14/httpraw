@@ -27,14 +27,16 @@ func TestHttpTpl(t *testing.T) {
 		"queryType":  "businessInfo",
 	}
 
-	rDTO, err := httpTpl.ReqeustTDO(data)
+	rDTO, err := httpTpl.RequestTDO(data)
 	require.NoError(t, err)
 	fmt.Println(rDTO)
 
 	req, err := rDTO.Request()
 	require.NoError(t, err)
 	//req1.Method, req1.URL.String(), req1.Body
-	body, err := httpraw.RestyRequestFn(context.Background(), req, nil)
+	curlClient := httpraw.NewClient(nil)
+
+	body, _, err := curlClient.Execute(context.Background(), req)
 	require.NoError(t, err)
 
 	fmt.Println(string(body))

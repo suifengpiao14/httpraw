@@ -59,12 +59,8 @@ func (htPt HttpTpl) Request(data any) (r *http.Request, err error) {
 	}
 	return r, nil
 }
-func (htPt HttpTpl) ReqeustTDO(data any) (reqDTO *RequestDTO, err error) {
-	rawHttp, err := htPt.RenderTpl(data)
-	if err != nil {
-		return nil, err
-	}
-	r, err := ReadRequest(rawHttp)
+func (htPt HttpTpl) RequestTDO(tplData any) (reqDTO *RequestDTO, err error) {
+	r, err := htPt.Request(tplData)
 	if err != nil {
 		return nil, err
 	}
@@ -153,6 +149,14 @@ type RequestDTO struct {
 	Body    string         `json:"body"`
 }
 
+func (rDTO RequestDTO) Copy() *RequestDTO {
+	c := rDTO
+	c.Header = copyHttpHeader(rDTO.Header)
+	c.Cookies = make([]*http.Cookie, len(rDTO.Cookies))
+	copy(c.Cookies, rDTO.Cookies)
+	return &c
+}
+
 func (rDTO RequestDTO) Request() (req *http.Request, err error) {
 	req, err = BuildRequest(&rDTO)
 	if err != nil {
@@ -212,8 +216,28 @@ type ResponseDTO struct {
 	RequestData *RequestDTO    `json:"requestData"`
 }
 
-func ParseResponse(b []byte, r *http.Request) (responseDTO *ResponseDTO, err error) {
-	byteReader := bytes.NewReader(b)
+func (rDTO ResponseDTO) Copy() *ResponseDTO {
+	c := rDTO
+	c.Cookies = make([]*http.Cookie, len(rDTO.Cookies))
+	copy(c.Cookies, rDTO.Cookies)
+	c.RequestData = c.RequestData.Copy()
+	c.Header = copyHttpHeader(rDTO.Header)
+
+	return &c
+}
+
+func copyHttpHeader(header http.Header) (newHeader http.Header) {
+	newHeader = make(http.Header)
+	for k, v := range header {
+		for _, v2 := range v {
+			newHeader.Add(k, v2)
+		}
+	}
+	return newHeader
+}
+
+func ParseResponse(HttpResponse []byte, r *http.Request) (responseDTO *ResponseDTO, err error) {
+	byteReader := bytes.NewReader(HttpResponse)
 	reader := bufio.NewReader(byteReader)
 	rsp, err := http.ReadResponse(reader, r)
 	if err != nil {
@@ -226,10 +250,15 @@ func ParseResponse(b []byte, r *http.Request) (responseDTO *ResponseDTO, err err
 			return nil, err
 		}
 	}
+	body, err := io.ReadAll(rsp.Body)
+	if err != nil {
+		return nil, err
+	}
 	responseDTO = &ResponseDTO{
 		HttpStatus:  strconv.Itoa(rsp.StatusCode),
 		Header:      rsp.Header,
 		Cookies:     rsp.Cookies(),
+		Body:        string(body),
 		RequestData: reqData,
 	}
 	return responseDTO, nil

@@ -15,16 +15,33 @@ import (
 	"github.com/pkg/errors"
 )
 
-// RequestFn 封装http请求数据格式
-type RequestFn func(ctx context.Context, req *http.Request, transport *http.Transport) (out []byte, err error)
+type Client struct {
+	TransportConfig *TransportConfig
+	_Transport      *http.Transport
+}
 
-// RestyRequestFn 通用请求方法
-func RestyRequestFn(ctx context.Context, req *http.Request, transport *http.Transport) (out []byte, err error) {
-	client := resty.New()
-	if transport != nil {
-		client.SetTransport(transport)
+func NewClient(transportConfig *TransportConfig) Client {
+	return Client{
+		TransportConfig: transportConfig,
 	}
-	r := resty.New().R()
+}
+
+func (c Client) Transport() *http.Transport {
+	if c._Transport != nil {
+		return c._Transport
+	}
+	if c.TransportConfig == nil {
+		c._Transport = http.DefaultTransport.(*http.Transport)
+		return c._Transport
+	}
+	c._Transport = NewTransport(c.TransportConfig)
+	return c._Transport
+}
+
+func (c Client) Execute(ctx context.Context, req *http.Request) (out []byte, resp *http.Response, err error) {
+	client := resty.New()
+	client.SetTransport(c.Transport())
+	r := client.R().SetContext(ctx)
 	urlstr := req.URL.String()
 	r.Header = req.Header
 	r.FormData = req.Form
@@ -32,25 +49,24 @@ func RestyRequestFn(ctx context.Context, req *http.Request, transport *http.Tran
 	if req.Body != nil {
 		body, err := io.ReadAll(req.Body)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		r.SetBody(body)
 		req.Body.Close()
 		req.Body = io.NopCloser(bytes.NewReader(body))
 	}
-
 	res, err := r.Execute(strings.ToUpper(req.Method), urlstr)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-
 	responseBody := res.Body()
 	if !res.IsSuccess() {
 		err = errors.Errorf("http status:%d,body:%s", res.StatusCode(), string(responseBody))
 		err = errors.WithMessage(err, fmt.Sprintf("%v", res.Error()))
-		return nil, err
+		return nil, nil, err
 	}
-	return responseBody, nil
+	return responseBody, res.RawResponse, nil
+
 }
 
 var CURL_TIMEOUT = 30 * time.Millisecond
