@@ -8,7 +8,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.10.0
 	github.com/suifengpiao14/funcs v0.0.18
-	github.com/suifengpiao14/yaegijson v0.0.1
+	github.com/suifengpiao14/yaegijson v0.0.2
 	github.com/tidwall/gjson v1.18.0
 	github.com/tidwall/sjson v1.2.5
 )

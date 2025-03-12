@@ -19,8 +19,8 @@ github.com/stretchr/testify v1.10.0 h1:Xv5erBjTwe/5IxqUQTdXv5kgmIvbHo3QQyRwhJsOf
 github.com/stretchr/testify v1.10.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 github.com/suifengpiao14/funcs v0.0.18 h1:TQZ9EPPnzGBFNIIpHO+I/y38ufO0osZlGtm49P2DNkA=
 github.com/suifengpiao14/funcs v0.0.18/go.mod h1:g95inzlUrS2Vtyvv5SjVFOnOeX7ZBPWwyKuEMMW+g7U=
-github.com/suifengpiao14/yaegijson v0.0.1 h1:MIW8mYB8Qui3gkurFf8wvcCJbDVbm0evLIzXpLJoQIo=
-github.com/suifengpiao14/yaegijson v0.0.1/go.mod h1:Q719e07f7cMqMmpLAnaXAzLcNuqAnjCIT6CgnDtuZNg=
+github.com/suifengpiao14/yaegijson v0.0.2 h1:07u4IfN303uiNCj55wGi675tWGtAmjKI+pOpU6t7PXw=
+github.com/suifengpiao14/yaegijson v0.0.2/go.mod h1:9hr2vqqDRyharOCfS5DhsWuRNMIcqtlVhQt35kRxq/s=
 github.com/tidwall/gjson v1.14.2/go.mod h1:/wbyibRr2FHMks5tjHJ5F8dMZh3AcwJEMf5vlfC0lxk=
 github.com/tidwall/gjson v1.18.0 h1:FIDeeyB800efLX89e5a8Y0BNH+LOngJyGrIWxG2FKQY=
 github.com/tidwall/gjson v1.18.0/go.mod h1:/wbyibRr2FHMks5tjHJ5F8dMZh3AcwJEMf5vlfC0lxk=
