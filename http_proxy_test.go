@@ -10,7 +10,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-func TestCurlProxy(t *testing.T) {
+func TestHTTPProxy(t *testing.T) {
 	var httpTpl httpraw.HttpTpl = `
 	POST / HTTP/1.1
 	Host: new-merchant-api.hsb.com
@@ -28,7 +28,7 @@ func TestCurlProxy(t *testing.T) {
 		"queryType":  "businessInfo",
 	}
 
-	curlProxy := httpraw.HTTPProxy{
+	httpProxy := httpraw.HTTPProxy{
 		HttpTpl: httpTpl,
 		BeforRequest: func(reqDTO *httpraw.RequestDTO) (newReqDTO *httpraw.RequestDTO, err error) {
 			reqDTO.Body = `{"_head":{"_interface":"NewMerchantCenterServer.Api.V1.getMerchantInfo","_msgType":"request","_remark":"","_version":"0.01","_timestamps":"1439261904","_invokeId":"563447634257324435","_callerServiceId":"210015","_groupNo":"1"},"_param":{"merchantId":"141218","queryType":"businessInfo"}}`
@@ -44,7 +44,7 @@ func TestCurlProxy(t *testing.T) {
 		},
 	}
 	ctx := context.Background()
-	body, err := curlProxy.Proxy(ctx, data)
+	body, err := httpProxy.Proxy(ctx, data)
 	require.NoError(t, err)
 	fmt.Println(body)
 }
