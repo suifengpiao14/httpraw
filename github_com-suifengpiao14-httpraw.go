@@ -8,11 +8,15 @@ import (
 
 func init() {
 	Symbols["github.com/suifengpiao14/httpraw/httpraw"] = map[string]reflect.Value{
+		// function, constant and variable definitions
+		"SliceAny2string" : reflect.ValueOf(SliceAny2string),
+
 		// type definitions
 		"AfterRequestFn":   reflect.ValueOf((*AfterRequestFn)(nil)),
 		"BeforRequestFn":   reflect.ValueOf((*BeforRequestFn)(nil)),
 		"CallBackFn":   reflect.ValueOf((*CallBackFn)(nil)),
 		"RequestDTO":       reflect.ValueOf((*RequestDTO)(nil)),
 		"ResponseDTO":      reflect.ValueOf((*ResponseDTO)(nil)),
+		
 	}
 }
