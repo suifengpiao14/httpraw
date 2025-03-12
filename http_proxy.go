@@ -5,11 +5,14 @@ import (
 	"strconv"
 )
 
+type BeforRequestFn func(reqDTO *RequestDTO) (newReqDTO *RequestDTO, err error)
+type AfterRequestFn func(respDTO *ResponseDTO) (newRespDTO *ResponseDTO, err error)
+
 type HTTPProxy struct {
 	HttpTpl         HttpTpl          `json:"httpTpl"`
 	TransportConfig *TransportConfig `json:"transportConfig"`
-	BeforRequest    func(reqDTO *RequestDTO) (newReqDTO *RequestDTO, err error)
-	AfterRequest    func(respDTO *ResponseDTO) (newRespDTO *ResponseDTO, err error)
+	BeforRequest    BeforRequestFn
+	AfterRequest    AfterRequestFn
 	LogInfoFn       func(reqDTO *RequestDTO, respDTO *ResponseDTO)
 }
 
