@@ -1,6 +1,7 @@
 package httpraw
 
 import (
+	"github.com/pkg/errors"
 	"github.com/suifengpiao14/yaegijson"
 )
 
@@ -10,22 +11,36 @@ var Symbols = yaegijson.Symbols
 //go:generate yaegi extract github.com/suifengpiao14/httpraw
 
 type DynamicHook struct {
-	BeforeRequestFuncName string `json:"beforeRequestFuncName"`
-	AfterRequestFuncName  string `json:"afterRequestFuncName"`
-	ExtensionCode         string `json:"extensionCode"`
-	ExtensionPath         string `json:"extensionPath"`
+	BeforeRequestFuncName   string                      `json:"beforeRequestFuncName"`
+	AfterRequestFuncName    string                      `json:"afterRequestFuncName"`
+	CallBackFname           string                      `json:"callBackFuncName"`
+	DynamicExtensionHttpRaw *yaegijson.DynamicExtension `json:"-"`
 }
 
-func (p DynamicHook) HookFn() (beforeRequestFunc BeforRequestFn, afterRequestFunc AfterRequestFn, err error) {
+func (p DynamicHook) HookFn() (beforeRequestFunc BeforRequestFn, afterRequestFunc AfterRequestFn, callbackFn CallBackFn, err error) {
 	// 动态编译扩展代码
-	extension := yaegijson.NewDynamicExtension(p.ExtensionCode, p.ExtensionPath).Withsymbols(Symbols)
+	extension := p.DynamicExtensionHttpRaw
+	if extension == nil {
+		err = errors.Errorf("DynamicExtensionHttpRaw is nil")
+		return nil, nil, nil, err
+
+	}
 	err = extension.GetDestFuncImpl(p.BeforeRequestFuncName, &beforeRequestFunc)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	err = extension.GetDestFuncImpl(p.AfterRequestFuncName, &afterRequestFunc)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	return beforeRequestFunc, afterRequestFunc, nil
+	err = extension.GetDestFuncImpl(p.CallBackFname, &callbackFn)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return beforeRequestFunc, afterRequestFunc, callbackFn, nil
+}
+
+func NewDynamicExtensionHttpRaw(extensionCode string, extensionPath string) *yaegijson.DynamicExtension {
+	extension := yaegijson.NewDynamicExtension(extensionCode, extensionPath).Withsymbols(Symbols)
+	return extension
 }
