@@ -31,13 +31,18 @@ func AfterFn(input *httpraw.ResponseDTO) (output *httpraw.ResponseDTO, err error
 
 `
 
-func TestDynamicExtensionHttpRaw(t *testing.T) {
+func TestDynamicHook(t *testing.T) {
 	dynamicExtensionHttpRaw := httpraw.NewDynamicExtensionHttpRaw(extensionCode, "")
+	dynamicHook := httpraw.DynamicHook{
+		BeforeRequestFuncName:   "dynamichookexample.BeforeFn",
+		AfterRequestFuncName:    "dynamichookexample.AfterFn",
+		DynamicExtensionHttpRaw: dynamicExtensionHttpRaw,
+	}
 
-	var before httpraw.BeforeRequestFn
-	err := dynamicExtensionHttpRaw.GetDestFuncImpl("dynamichookexample.BeforeFn", &before)
+	before, after, err := dynamicHook.HookFn()
 	require.NoError(t, err)
 	require.NotNil(t, before)
+	require.NotNil(t, after)
 
 	input := &httpraw.RequestDTO{
 		Body: `{"body":{"_head":{"_timestamps":"1234567890"}}}`,

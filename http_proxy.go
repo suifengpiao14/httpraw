@@ -7,7 +7,6 @@ import (
 
 type BeforeRequestFn func(reqDTO *RequestDTO) (newReqDTO *RequestDTO, err error)
 type AfterRequestFn func(respDTO *ResponseDTO) (newRespDTO *ResponseDTO, err error)
-type CallBackFn func(param map[string]any) (err error)
 
 type HTTPProxy struct {
 	HttpTpl         HttpTpl          `json:"httpTpl"`

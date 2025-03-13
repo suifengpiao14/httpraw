@@ -14,7 +14,6 @@ func init() {
 		// type definitions
 		"AfterRequestFn":   reflect.ValueOf((*AfterRequestFn)(nil)),
 		"BeforRequestFn":   reflect.ValueOf((*BeforeRequestFn)(nil)),
-		"CallBackFn":   reflect.ValueOf((*CallBackFn)(nil)),
 		"RequestDTO":       reflect.ValueOf((*RequestDTO)(nil)),
 		"ResponseDTO":      reflect.ValueOf((*ResponseDTO)(nil)),
 		
