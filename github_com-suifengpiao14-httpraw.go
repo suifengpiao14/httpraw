@@ -11,7 +11,6 @@ func init() {
 		// function, constant and variable definitions
 		"SliceAny2string" : reflect.ValueOf(SliceAny2string),
 		"DecodeResponseForJsonApiProtocol" : reflect.ValueOf(DecodeResponseForJsonApiProtocol),
-		"GetValueFromJson" : reflect.ValueOf(GetValueFromJson),
 
 		// type definitions
 		"AfterRequestFn":   reflect.ValueOf((*AfterRequestFn)(nil)),
