@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
+	"github.com/tidwall/gjson"
 )
 
 // SliceAny2string 将 []struct{}, []map[string]any 转成 []map[string]string
@@ -47,4 +48,21 @@ func SliceAny2string(structSlice any) (newData []map[string]string, err error) {
 	}
 
 	return newData, nil
+}
+
+// DecodeResponseForJsonApiProtocol 解析jsonapi协议的响应数据(封装函数具有固定的语义，便于阅读理解)
+func DecodeResponseForJsonApiProtocol(response, businessCodePath, businessMessagePath, dataPath string) (businessCode string, businessMessage string, data string) {
+	values := GetValueFromJson(response, businessCodePath, businessMessagePath, dataPath)
+	businessCode, businessMessage, data = values[0], values[1], values[2]
+	return businessCode, businessMessage, data
+}
+
+// GetValueFromJson 从json字符串中获取指定路径的值
+func GetValueFromJson(jsonStr string, paths ...string) (values []string) {
+	result := gjson.Parse(jsonStr)
+	values = make([]string, len(paths))
+	for i, path := range paths {
+		values[i] = result.Get(path).String()
+	}
+	return values
 }
