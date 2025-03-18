@@ -17,8 +17,8 @@ type HTTPProxy struct {
 	LogInfoFn       LogInfoFn
 }
 
-func (proxy HTTPProxy) Proxy(ctx context.Context, tplData any) (responseBody string, err error) {
-	r, err := proxy.HttpTpl.Request(tplData)
+func (proxy HTTPProxy) Proxy(ctx context.Context, context ...any) (responseBody string, err error) {
+	r, err := proxy.HttpTpl.Request(context...)
 	if err != nil {
 		return "", err
 	}

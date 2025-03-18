@@ -11,7 +11,7 @@ require (
 	github.com/spf13/cast v1.7.1
 	github.com/stretchr/testify v1.10.0
 	github.com/suifengpiao14/funcs v0.0.18
-	github.com/suifengpiao14/yaegijson v0.0.3
+	github.com/suifengpiao14/yaegijson v0.0.4
 	github.com/tidwall/gjson v1.18.0
 	github.com/tidwall/sjson v1.2.5
 	moul.io/http2curl v1.0.0
@@ -21,6 +21,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/smartystreets/goconvey v1.8.1 // indirect
+	github.com/suifengpiao14/gjsonmodifier v0.2.3 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/traefik/yaegi v0.16.1 // indirect

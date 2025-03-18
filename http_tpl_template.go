@@ -30,7 +30,7 @@ const (
 )
 
 // RenderTpl 解析模板，生成http raw 协议文本
-func (htPt HttpTpl) RenderTpl(datas ...any) (renderHttpRaw string, err error) {
+func (htPt HttpTpl) RenderTpl(context ...any) (renderHttpRaw string, err error) {
 	tpl := string(htPt)
 	formatedTpl, err := FomrmatHttpRaw(tpl)
 	if err != nil {
@@ -40,7 +40,8 @@ func (htPt HttpTpl) RenderTpl(datas ...any) (renderHttpRaw string, err error) {
 	if err != nil {
 		return "", err
 	}
-	rawHttp := template.Render(datas...)
+	context = append(context, TplRenderContext)
+	rawHttp := template.Render(context...)
 	renderHttpRaw, err = FomrmatHttpRaw(rawHttp)
 	if err != nil {
 		return "", err
@@ -49,8 +50,8 @@ func (htPt HttpTpl) RenderTpl(datas ...any) (renderHttpRaw string, err error) {
 }
 
 // Request 解析模板，生成 http.Request 协议文本
-func (htPt HttpTpl) Request(data any) (r *http.Request, err error) {
-	rawHttp, err := htPt.RenderTpl(data)
+func (htPt HttpTpl) Request(context ...any) (r *http.Request, err error) {
+	rawHttp, err := htPt.RenderTpl(context...)
 	if err != nil {
 		return nil, err
 	}
@@ -60,8 +61,8 @@ func (htPt HttpTpl) Request(data any) (r *http.Request, err error) {
 	}
 	return r, nil
 }
-func (htPt HttpTpl) RequestTDO(tplData any) (reqDTO *RequestDTO, err error) {
-	r, err := htPt.Request(tplData)
+func (htPt HttpTpl) RequestTDO(context ...any) (reqDTO *RequestDTO, err error) {
+	r, err := htPt.Request(context...)
 	if err != nil {
 		return nil, err
 	}

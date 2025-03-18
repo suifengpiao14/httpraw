@@ -19,7 +19,7 @@ func TestHttpTpl(t *testing.T) {
 
 
 
-	{"_head":{"_interface":"NewMerchantCenterServer.Api.V1.getMerchantInfo","_msgType":"request","_remark":"","_version":"0.01","_timestamps":"1439261904","_invokeId":"563447634257324435","_callerServiceId":"210015","_groupNo":"1"},"_param":{"merchantId":"{{merchantId}}","queryType":"{{queryType}}"}}
+	{"_head":{"_interface":"NewMerchantCenterServer.Api.V1.getMerchantInfo","_msgType":"request","_remark":"","_version":"0.01","_timestamps":"{{Now.Unix}}","_invokeId":"563447634257324435","_callerServiceId":"210015","_groupNo":"1"},"_param":{"merchantId":"{{merchantId}}","queryType":"{{queryType}}"}}
 	`
 
 	data := map[string]string{
