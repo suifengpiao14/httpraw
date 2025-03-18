@@ -41,3 +41,10 @@ func TestHttpTpl(t *testing.T) {
 
 	fmt.Println(string(body))
 }
+
+func TestRequestDTO(t *testing.T) {
+	var rDTO *httpraw.RequestDTO
+	cmdStr, err := rDTO.GetCurlCmd()
+	require.NoError(t, err)
+	fmt.Println(cmdStr)
+}

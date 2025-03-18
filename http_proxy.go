@@ -7,13 +7,14 @@ import (
 
 type BeforeRequestFn func(reqDTO *RequestDTO) (newReqDTO *RequestDTO, err error)
 type AfterRequestFn func(respDTO *ResponseDTO) (newRespDTO *ResponseDTO, err error)
+type LogInfoFn func(reqDTO *RequestDTO, respDTO *ResponseDTO)
 
 type HTTPProxy struct {
 	HttpTpl         HttpTpl          `json:"httpTpl"`
 	TransportConfig *TransportConfig `json:"transportConfig"`
 	BeforRequest    BeforeRequestFn
 	AfterRequest    AfterRequestFn
-	LogInfoFn       func(reqDTO *RequestDTO, respDTO *ResponseDTO)
+	LogInfoFn       LogInfoFn
 }
 
 func (proxy HTTPProxy) Proxy(ctx context.Context, tplData any) (responseBody string, err error) {
@@ -45,11 +46,11 @@ func (proxy HTTPProxy) Proxy(ctx context.Context, tplData any) (responseBody str
 	}
 	responseBody = string(responseBodyB)
 	responseDTO := &ResponseDTO{
-		HttpStatus:  strconv.Itoa(rsp.StatusCode),
-		Header:      rsp.Header,
-		Cookies:     rsp.Cookies(),
-		Body:        responseBody,
-		RequestData: reqDTO,
+		HttpStatus: strconv.Itoa(rsp.StatusCode),
+		Header:     rsp.Header,
+		Cookies:    rsp.Cookies(),
+		Body:       responseBody,
+		RequestDTO: reqDTO,
 	}
 	if proxy.AfterRequest != nil {
 		responseDTO, err = proxy.AfterRequest(responseDTO)

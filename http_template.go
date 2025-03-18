@@ -14,6 +14,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/suifengpiao14/funcs"
+	"moul.io/http2curl"
 )
 
 const (
@@ -157,6 +158,19 @@ func (rDTO RequestDTO) Copy() *RequestDTO {
 	return &c
 }
 
+func (rDTO RequestDTO) GetCurlCmd() (curlCmd string, err error) {
+	req, err := rDTO.Request()
+	if err != nil {
+		return "", err
+	}
+	curlCommand, err := http2curl.GetCurlCommand(req)
+	if err != nil {
+		return "", err
+	}
+	curlCmd = curlCommand.String()
+	return curlCmd, nil
+}
+
 func (rDTO RequestDTO) Request() (req *http.Request, err error) {
 	req, err = BuildRequest(&rDTO)
 	if err != nil {
@@ -209,18 +223,18 @@ func BuildRequest(requestDTO *RequestDTO) (req *http.Request, err error) {
 }
 
 type ResponseDTO struct {
-	HttpStatus  string         `json:"httpStatus"`
-	Header      http.Header    `json:"header"`
-	Cookies     []*http.Cookie `json:"cookies"`
-	Body        string         `json:"body"`
-	RequestData *RequestDTO    `json:"requestData"`
+	HttpStatus string         `json:"httpStatus"`
+	Header     http.Header    `json:"header"`
+	Cookies    []*http.Cookie `json:"cookies"`
+	Body       string         `json:"body"`
+	RequestDTO *RequestDTO    `json:"requestDTO"`
 }
 
 func (rDTO ResponseDTO) Copy() *ResponseDTO {
 	c := rDTO
 	c.Cookies = make([]*http.Cookie, len(rDTO.Cookies))
 	copy(c.Cookies, rDTO.Cookies)
-	c.RequestData = c.RequestData.Copy()
+	c.RequestDTO = c.RequestDTO.Copy()
 	c.Header = copyHttpHeader(rDTO.Header)
 
 	return &c
@@ -255,11 +269,11 @@ func ParseResponse(HttpResponse []byte, r *http.Request) (responseDTO *ResponseD
 		return nil, err
 	}
 	responseDTO = &ResponseDTO{
-		HttpStatus:  strconv.Itoa(rsp.StatusCode),
-		Header:      rsp.Header,
-		Cookies:     rsp.Cookies(),
-		Body:        string(body),
-		RequestData: reqData,
+		HttpStatus: strconv.Itoa(rsp.StatusCode),
+		Header:     rsp.Header,
+		Cookies:    rsp.Cookies(),
+		Body:       string(body),
+		RequestDTO: reqData,
 	}
 	return responseDTO, nil
 }

@@ -50,9 +50,12 @@ func SliceAny2string(structSlice any) (newData []map[string]string, err error) {
 	return newData, nil
 }
 
+var GetValuesFromJson = yaegijson.GetValuesFromJson
+var SetValueToJson = yaegijson.SetValueToJson
+
 // DecodeResponseForJsonApiProtocol 解析jsonapi协议的响应数据(封装函数具有固定的语义，便于阅读理解)
 func DecodeResponseForJsonApiProtocol(response, businessCodePath, businessMessagePath, dataPath string) (businessCode string, businessMessage string, data string) {
-	values := yaegijson.GetValueFromJson(response, businessCodePath, businessMessagePath, dataPath)
+	values := yaegijson.GetValuesFromJson(response, businessCodePath, businessMessagePath, dataPath)
 	businessCode, businessMessage, data = values[0], values[1], values[2]
 	return businessCode, businessMessage, data
 }
