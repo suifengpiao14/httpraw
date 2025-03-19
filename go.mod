@@ -11,7 +11,7 @@ require (
 	github.com/spf13/cast v1.7.1
 	github.com/stretchr/testify v1.10.0
 	github.com/suifengpiao14/funcs v0.0.18
-	github.com/suifengpiao14/yaegijson v0.0.4
+	github.com/suifengpiao14/yaegijson v0.0.5
 	github.com/tidwall/gjson v1.18.0
 	github.com/tidwall/sjson v1.2.5
 	moul.io/http2curl v1.0.0

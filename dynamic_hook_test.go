@@ -32,7 +32,7 @@ func AfterFn(input *httpraw.ResponseDTO) (output *httpraw.ResponseDTO, err error
 `
 
 func TestDynamicHook(t *testing.T) {
-	dynamicExtensionHttpRaw := httpraw.NewDynamicExtensionHttpRaw(extensionCode, "")
+	dynamicExtensionHttpRaw := httpraw.NewExtension().WithSouceCode(extensionCode)
 	dynamicHook := httpraw.DynamicHook{
 		BeforeRequestFuncName:   "dynamichookexample.BeforeFn",
 		AfterRequestFuncName:    "dynamichookexample.AfterFn",

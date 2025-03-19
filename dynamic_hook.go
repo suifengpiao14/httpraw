@@ -11,9 +11,9 @@ var Symbols = yaegijson.Symbols
 //go:generate yaegi extract github.com/suifengpiao14/httpraw
 
 type DynamicHook struct {
-	BeforeRequestFuncName   string                      `json:"beforeRequestFuncName"`
-	AfterRequestFuncName    string                      `json:"afterRequestFuncName"`
-	DynamicExtensionHttpRaw *yaegijson.DynamicExtension `json:"-"`
+	BeforeRequestFuncName   string               `json:"beforeRequestFuncName"`
+	AfterRequestFuncName    string               `json:"afterRequestFuncName"`
+	DynamicExtensionHttpRaw *yaegijson.Extension `json:"-"`
 }
 
 func (p DynamicHook) HookFn() (beforeRequestFunc BeforeRequestFn, afterRequestFunc AfterRequestFn, err error) {
@@ -35,7 +35,7 @@ func (p DynamicHook) HookFn() (beforeRequestFunc BeforeRequestFn, afterRequestFu
 	return beforeRequestFunc, afterRequestFunc, nil
 }
 
-func NewDynamicExtensionHttpRaw(extensionCode string, extensionPath string) *yaegijson.DynamicExtension {
-	extension := yaegijson.NewDynamicExtension(extensionCode, extensionPath).Withsymbols(Symbols)
+func NewExtension() *yaegijson.Extension {
+	extension := yaegijson.NewExtension().WithSymbols(Symbols)
 	return extension
 }
