@@ -5,8 +5,8 @@ go 1.21
 toolchain go1.22.5
 
 require (
+	github.com/cbroglie/mustache v1.4.0
 	github.com/go-resty/resty/v2 v2.11.0
-	github.com/hoisie/mustache v0.0.0-20160804235033-6375acf62c69
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cast v1.7.1
 	github.com/stretchr/testify v1.10.0

@@ -10,12 +10,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/hoisie/mustache"
-
+	"github.com/cbroglie/mustache"
 	"github.com/pkg/errors"
 	"github.com/suifengpiao14/funcs"
 	"moul.io/http2curl"
 )
+
+func init() {
+	mustache.AllowMissingVariables = false // 不允许变量缺失，变量缺失，不报错，会得到非法expr 表达式，将错误延迟到后续报错，增加使用、调试难度
+}
 
 const (
 	Window_EOF           = "\r\n"
@@ -41,7 +44,10 @@ func (htPt HttpTpl) RenderTpl(context ...any) (renderHttpRaw string, err error) 
 		return "", err
 	}
 	context = append(context, TplRenderContext)
-	rawHttp := template.Render(context...)
+	rawHttp, err := template.Render(context...)
+	if err != nil {
+		return "", err
+	}
 	renderHttpRaw, err = FomrmatHttpRaw(rawHttp)
 	if err != nil {
 		return "", err
