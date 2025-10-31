@@ -39,7 +39,7 @@ func (htPt HttpTpl) RenderTpl(context ...any) (renderHttpRaw string, err error) 
 	if err != nil {
 		return "", err
 	}
-	template, err := mustache.ParseString(formatedTpl)
+	template, err := mustache.ParseStringRaw(formatedTpl, true)
 	if err != nil {
 		return "", err
 	}
