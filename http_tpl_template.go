@@ -150,11 +150,12 @@ func FomrmatHttpRaw(httpRaw string) (formatHttpRaw string, err error) {
 }
 
 type RequestDTO struct {
-	URL     string         `json:"url"`
-	Method  string         `json:"method"`
-	Header  http.Header    `json:"header"`
-	Cookies []*http.Cookie `json:"cookies"`
-	Body    string         `json:"body"`
+	MetaData map[string]any `json:"metaData"` // metaData 用于存放一些额外的信息，例如请求的发起时间、循环次数、耗时等
+	URL      string         `json:"url"`
+	Method   string         `json:"method"`
+	Header   http.Header    `json:"header"`
+	Cookies  []*http.Cookie `json:"cookies"`
+	Body     string         `json:"body"`
 }
 
 func (rDTO RequestDTO) Copy() *RequestDTO {
@@ -230,6 +231,7 @@ func BuildRequest(requestDTO *RequestDTO) (req *http.Request, err error) {
 }
 
 type ResponseDTO struct {
+	MetaData   map[string]any `json:"metaData"` // metaData 用于存放一些额外的信息，例如请求的发起时间、循环次数、耗时等
 	HttpStatus string         `json:"httpStatus"`
 	Header     http.Header    `json:"header"`
 	Cookies    []*http.Cookie `json:"cookies"`
