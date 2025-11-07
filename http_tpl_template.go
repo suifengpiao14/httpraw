@@ -16,9 +16,11 @@ import (
 	"moul.io/http2curl"
 )
 
-func init() {
-	mustache.AllowMissingVariables = false // 不允许变量缺失，变量缺失，不报错，会得到非法expr 表达式，将错误延迟到后续报错，增加使用、调试难度
-}
+// http raw 有些可选参数可能不传递，所以需要容许变量缺失，所以这里设置为false
+
+// func init() {
+// 	mustache.AllowMissingVariables = false // 不允许变量缺失，变量缺失，不报错，会得到非法expr 表达式，将错误延迟到后续报错，增加使用、调试难度
+// }
 
 const (
 	Window_EOF           = "\r\n"
