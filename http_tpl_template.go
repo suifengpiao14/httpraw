@@ -3,6 +3,7 @@ package httpraw
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -158,6 +159,14 @@ type RequestDTO struct {
 	Body     string         `json:"body"`
 }
 
+func (dto RequestDTO) String() string {
+	b, err := json.Marshal(dto)
+	if err != nil {
+		return err.Error()
+	}
+	return string(b)
+}
+
 func (rDTO RequestDTO) Copy() *RequestDTO {
 	c := rDTO
 	c.Header = copyHttpHeader(rDTO.Header)
@@ -237,6 +246,14 @@ type ResponseDTO struct {
 	Cookies    []*http.Cookie `json:"cookies"`
 	Body       string         `json:"body"`
 	RequestDTO *RequestDTO    `json:"requestDTO"`
+}
+
+func (dto ResponseDTO) String() string {
+	b, err := json.Marshal(dto)
+	if err != nil {
+		return err.Error()
+	}
+	return string(b)
 }
 
 func (rDTO ResponseDTO) Copy() *ResponseDTO {
