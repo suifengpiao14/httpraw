@@ -167,6 +167,19 @@ func (dto RequestDTO) String() string {
 	return string(b)
 }
 
+func (dto RequestDTO) CurlCommand() string {
+	req, err := dto.Request()
+	if err != nil {
+		return err.Error()
+	}
+	commd, err := http2curl.GetCurlCommand(req)
+	if err != nil {
+		return err.Error()
+	}
+	curlCmd := commd.String()
+	return curlCmd
+}
+
 func (rDTO RequestDTO) Copy() *RequestDTO {
 	c := rDTO
 	c.Header = copyHttpHeader(rDTO.Header)
