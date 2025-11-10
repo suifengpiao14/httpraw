@@ -47,7 +47,7 @@ func (proxy HTTPProxy) Proxy(ctx context.Context, context ...any) (responseBody 
 	responseBody = string(responseBodyB)
 	responseDTO := &ResponseDTO{
 		HttpStatus: strconv.Itoa(rsp.StatusCode),
-		Header:     rsp.Header,
+		Headers:    HttpHeader2Headers(rsp.Header),
 		Cookies:    rsp.Cookies(),
 		Body:       responseBody,
 		RequestDTO: reqDTO,

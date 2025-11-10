@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"net/http/httputil"
 	"strconv"
@@ -156,7 +157,7 @@ type RequestDTO struct {
 	MetaData map[string]any `json:"metaData"` // metaData 用于存放一些额外的信息，例如请求的发起时间、循环次数、耗时等
 	URL      string         `json:"url"`
 	Method   string         `json:"method"`
-	Header   http.Header    `json:"header"`
+	Headers  Headers        `json:"header"`
 	Cookies  []*http.Cookie `json:"cookies"`
 	Body     string         `json:"body"`
 }
@@ -184,7 +185,7 @@ func (dto RequestDTO) CurlCommand() string {
 
 func (rDTO RequestDTO) Copy() *RequestDTO {
 	c := rDTO
-	c.Header = copyHttpHeader(rDTO.Header)
+	c.Headers = rDTO.Headers.Copy()
 	c.Cookies = make([]*http.Cookie, len(rDTO.Cookies))
 	copy(c.Cookies, rDTO.Cookies)
 	return &c
@@ -229,7 +230,7 @@ func DestructReqeust(req *http.Request) (requestDTO *RequestDTO, err error) {
 	requestDTO = &RequestDTO{
 		URL:     req.URL.String(),
 		Method:  req.Method,
-		Header:  req.Header,
+		Headers: HttpHeader2Headers(req.Header),
 		Cookies: req.Cookies(),
 		Body:    string(bodyByte),
 	}
@@ -242,11 +243,12 @@ func BuildRequest(requestDTO *RequestDTO) (req *http.Request, err error) {
 	if err != nil {
 		return nil, err
 	}
-	requestDTO.Header.Del(Http_header_Content_Type) // 删除最初的长度头，使用新计算值
-	for name, value := range requestDTO.Header {    // 循环赋值,确保不会覆盖 http.NewRequest自动生成的头信息
-		for _, v := range value {
-			req.Header.Add(name, v)
-		}
+	requestDTO.Headers.Del(Http_header_Content_Type) // 删除最初的长度头，使用新计算值
+	if req.Header == nil {
+		req.Header = make(http.Header)
+	}
+	for name, value := range requestDTO.Headers { // 循环赋值,确保不会覆盖 http.NewRequest自动生成的头信息
+		req.Header[name] = []string{value}
 	}
 	for _, cookie := range requestDTO.Cookies {
 		req.AddCookie(cookie)
@@ -254,10 +256,39 @@ func BuildRequest(requestDTO *RequestDTO) (req *http.Request, err error) {
 	return req, nil
 }
 
+type Headers map[string]string
+
+func (hs Headers) HttpHeaders() (httpHeader http.Header) {
+	httpHeader = http.Header{}
+	for k, v := range hs {
+		httpHeader[k] = []string{v}
+	}
+	return httpHeader
+}
+
+func (hs Headers) Copy() Headers {
+	dst := make(Headers)
+	maps.Copy(hs, dst)
+	return dst
+}
+func (hs *Headers) Del(key string) {
+	delete(*hs, key)
+}
+
+func HttpHeader2Headers(hs http.Header) (headers Headers) {
+	headers = make(Headers)
+	for k, v := range hs {
+		if len(v) > 0 {
+			headers[k] = v[0]
+		}
+	}
+	return headers
+}
+
 type ResponseDTO struct {
 	MetaData   map[string]any `json:"metaData"` // metaData 用于存放一些额外的信息，例如请求的发起时间、循环次数、耗时等
 	HttpStatus string         `json:"httpStatus"`
-	Header     http.Header    `json:"header"`
+	Headers    Headers        `json:"header"`
 	Cookies    []*http.Cookie `json:"cookies"`
 	Body       string         `json:"body"`
 	RequestDTO *RequestDTO    `json:"requestDTO"`
@@ -276,7 +307,7 @@ func (rDTO ResponseDTO) Copy() *ResponseDTO {
 	c.Cookies = make([]*http.Cookie, len(rDTO.Cookies))
 	copy(c.Cookies, rDTO.Cookies)
 	c.RequestDTO = c.RequestDTO.Copy()
-	c.Header = copyHttpHeader(rDTO.Header)
+	c.Headers = rDTO.Headers.Copy()
 
 	return &c
 }
@@ -311,7 +342,7 @@ func ParseResponse(HttpResponse []byte, r *http.Request) (responseDTO *ResponseD
 	}
 	responseDTO = &ResponseDTO{
 		HttpStatus: strconv.Itoa(rsp.StatusCode),
-		Header:     rsp.Header,
+		Headers:    HttpHeader2Headers(rsp.Header),
 		Cookies:    rsp.Cookies(),
 		Body:       string(body),
 		RequestDTO: reqData,
