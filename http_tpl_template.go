@@ -153,6 +153,38 @@ func FomrmatHttpRaw(httpRaw string) (formatHttpRaw string, err error) {
 	return formatHttpRaw, nil
 }
 
+func ParseRequestDTO(reqDTOStr string) (reqDTO *RequestDTO, err error) {
+	if reqDTOStr == "" {
+		return nil, errors.Errorf("request dto is empty")
+	}
+	reqDTO = &RequestDTO{}
+	err = json.Unmarshal([]byte(reqDTOStr), reqDTO)
+	if err != nil {
+		return nil, err
+	}
+	return reqDTO, nil
+}
+
+func RenderRequestDTO(requestTpl string, context ...any) (reqDTO *RequestDTO, err error) {
+	if requestTpl == "" {
+		err = errors.Errorf(`RenderRequestDTO requestTpll required `)
+		return nil, err
+	}
+	httpTpl := HttpTpl(requestTpl)
+	rDTO, err := httpTpl.RequestTDO(context...)
+	if err != nil {
+		return nil, err
+	}
+	var w bytes.Buffer
+	err = json.Compact(&w, []byte(rDTO.Body))
+	if err != nil {
+		err = errors.WithMessagef(err, `json.Compact(%s)`, rDTO.Body)
+		return nil, err
+	}
+	rDTO.Body = w.String()
+	return rDTO, nil
+}
+
 type RequestDTO struct {
 	MetaData map[string]any `json:"metaData"` // metaData 用于存放一些额外的信息，例如请求的发起时间、循环次数、耗时等
 	URL      string         `json:"url"`
