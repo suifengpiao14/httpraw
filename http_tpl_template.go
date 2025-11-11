@@ -185,6 +185,10 @@ func RenderRequestDTO(requestTpl string, context ...any) (reqDTO *RequestDTO, er
 	return rDTO, nil
 }
 
+// 非标准头传递的头信息，key 映射表
+
+var NonstandardHeaderKeyMap = map[string]string{}
+
 type RequestDTO struct {
 	MetaData map[string]any `json:"metaData"` // metaData 用于存放一些额外的信息，例如请求的发起时间、循环次数、耗时等
 	URL      string         `json:"url"`
@@ -280,7 +284,11 @@ func BuildRequest(requestDTO *RequestDTO) (req *http.Request, err error) {
 		req.Header = make(http.Header)
 	}
 	for name, value := range requestDTO.Headers { // 循环赋值,确保不会覆盖 http.NewRequest自动生成的头信息
-		req.Header[name] = []string{value}
+		key := name
+		if _, ok := NonstandardHeaderKeyMap[name]; ok { // 非标准自定义的头信息，需要转换key
+			key = NonstandardHeaderKeyMap[name]
+		}
+		req.Header[key] = []string{value}
 	}
 	for _, cookie := range requestDTO.Cookies {
 		req.AddCookie(cookie)
