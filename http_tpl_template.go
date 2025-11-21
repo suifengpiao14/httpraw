@@ -227,6 +227,7 @@ func (rDTO RequestDTO) Copy() *RequestDTO {
 	return &c
 }
 
+// Deprecated: 请使用 CurlCommand 方法代替
 func (rDTO RequestDTO) GetCurlCmd() (curlCmd string, err error) {
 	req, err := rDTO.Request()
 	if err != nil {
@@ -274,6 +275,8 @@ func DestructReqeust(req *http.Request) (requestDTO *RequestDTO, err error) {
 	return requestDTO, nil
 }
 
+const Http_header_Content_Length = "Content-Length"
+
 func BuildRequest(requestDTO *RequestDTO) (req *http.Request, err error) {
 	req, err = http.NewRequest(requestDTO.Method, requestDTO.URL, bytes.NewReader([]byte(requestDTO.Body)))
 	if err != nil {
@@ -284,6 +287,9 @@ func BuildRequest(requestDTO *RequestDTO) (req *http.Request, err error) {
 		req.Header = make(http.Header)
 	}
 	for name, value := range requestDTO.Headers { // 循环赋值,确保不会覆盖 http.NewRequest自动生成的头信息
+		if strings.EqualFold(name, Http_header_Content_Length) { // 特殊处理，避免覆盖长度头
+			continue
+		}
 		key := name
 		if _, ok := NonstandardHeaderKeyMap[name]; ok { // 非标准自定义的头信息，需要转换key
 			key = NonstandardHeaderKeyMap[name]
