@@ -251,6 +251,9 @@ func (rDTO RequestDTO) Request() (req *http.Request, err error) {
 
 // DestructReqeust 将 http.Request 转换为 request 结构体，方便将http raw 转换为常见的构造http请求参数
 func DestructReqeust(req *http.Request) (requestDTO *RequestDTO, err error) {
+	if req == nil {
+		return nil, errors.Errorf("request is nil")
+	}
 	requestDTO = &RequestDTO{}
 	var bodyByte []byte
 	if req.Body != nil {
@@ -258,7 +261,6 @@ func DestructReqeust(req *http.Request) (requestDTO *RequestDTO, err error) {
 		if err != nil {
 			return nil, err
 		}
-		req.Body.Close()
 		req.Body.Close()
 		req.Body = io.NopCloser(bytes.NewReader(bodyByte))
 	}
@@ -273,6 +275,36 @@ func DestructReqeust(req *http.Request) (requestDTO *RequestDTO, err error) {
 	}
 
 	return requestDTO, nil
+}
+
+func DestructResponse(rsp *http.Response, body []byte) (responseDTO *ResponseDTO, err error) {
+	if rsp == nil {
+		return nil, errors.Errorf("response is nil")
+	}
+	reqData := new(RequestDTO)
+	if rsp.Request != nil {
+		reqData, err = DestructReqeust(rsp.Request)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if len(body) == 0 && rsp.Body != nil {
+		body, err = io.ReadAll(rsp.Body)
+		if err != nil {
+			return nil, err
+		}
+		rsp.Body.Close()
+		rsp.Body = io.NopCloser(bytes.NewReader(body))
+	}
+
+	responseDTO = &ResponseDTO{
+		HttpStatus: strconv.Itoa(rsp.StatusCode),
+		Headers:    HttpHeader2Headers(rsp.Header),
+		Cookies:    rsp.Cookies(),
+		Body:       string(body),
+		RequestDTO: reqData,
+	}
+	return responseDTO, nil
 }
 
 const Http_header_Content_Length = "Content-Length"
