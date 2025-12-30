@@ -277,6 +277,19 @@ func DestructReqeust(req *http.Request) (requestDTO *RequestDTO, err error) {
 	return requestDTO, nil
 }
 
+// 截取body，避免超大内容导致内存溢出
+func CutBody(body []byte, size int) []byte {
+	if len(body) <= size {
+		return body
+	}
+	bodyRune := []rune(string(body))
+	if len(bodyRune) > size {
+		bodyRune = bodyRune[0:size]
+		body = []byte(string(bodyRune))
+	}
+	return body
+}
+
 func DestructResponse(rsp *http.Response, body []byte) (responseDTO *ResponseDTO, err error) {
 	if rsp == nil {
 		return nil, errors.Errorf("response is nil")
