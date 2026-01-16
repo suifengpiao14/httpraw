@@ -27,7 +27,7 @@ import (
 const (
 	Window_EOF           = "\r\n"
 	Linux_EOF            = "\n"
-	HTTP_HEAD_BODY_DELIM = Window_EOF + Window_EOF
+	HTTP_HEAD_BODY_DELIM = Linux_EOF + Linux_EOF
 )
 
 type HttpTpl string
@@ -39,7 +39,7 @@ const (
 // RenderTpl 解析模板，生成http raw 协议文本
 func (htPt HttpTpl) RenderTpl(context ...any) (renderHttpRaw string, err error) {
 	tpl := string(htPt)
-	formatedTpl, err := FomrmatHttpRaw(tpl)
+	formatedTpl, err := FomrmatHttpRequestRaw(tpl)
 	if err != nil {
 		return "", err
 	}
@@ -52,7 +52,7 @@ func (htPt HttpTpl) RenderTpl(context ...any) (renderHttpRaw string, err error) 
 	if err != nil {
 		return "", err
 	}
-	renderHttpRaw, err = FomrmatHttpRaw(rawHttp)
+	renderHttpRaw, err = FomrmatHttpRequestRaw(rawHttp)
 	if err != nil {
 		return "", err
 	}
@@ -85,7 +85,7 @@ func (htPt HttpTpl) RequestTDO(context ...any) (reqDTO *RequestDTO, err error) {
 
 // ReadRequest http 文本协议格式转http.Request 对象,需要格式化文本协议，请先调用 FomrmatHttpRaw 函数
 func ReadRequest(httpRaw string) (req *http.Request, err error) {
-	httpRaw, err = FomrmatHttpRaw(httpRaw) // 此处实现转换，确保格式ok(此处格式化，方便兼容手写)
+	httpRaw, err = FomrmatHttpRequestRaw(httpRaw) // 此处实现转换，确保格式ok(此处格式化，方便兼容手写)
 	if err != nil {
 		return nil, err
 	}
@@ -111,8 +111,10 @@ func readRequestNoFormat(httpRaw string) (req *http.Request, err error) {
 }
 
 // FomrmatHttpRaw 格式化http 协议模板，手写协议在空格控制方面往往不规范，提供此方法，一是供内部格式化检测，二是给外部提供格式化途径
-func FomrmatHttpRaw(httpRaw string) (formatHttpRaw string, err error) {
+func FomrmatHttpRequestRaw(httpRaw string) (formatHttpRaw string, err error) {
+
 	httpRaw = funcs.TrimSpaces(httpRaw)
+	httpRaw = strings.ReplaceAll(httpRaw, Window_EOF, Linux_EOF) // 替换为Linux 换行符
 	lineArr := strings.Split(httpRaw, Linux_EOF)
 	formatLineArr := make([]string, 0)
 	headerContentType := strings.ToLower(Http_header_Content_Type)
@@ -124,7 +126,7 @@ func FomrmatHttpRaw(httpRaw string) (formatHttpRaw string, err error) {
 		formatLineArr = append(formatLineArr, formatLine)
 
 	}
-	httpRaw = strings.Join(formatLineArr, Window_EOF)
+	httpRaw = strings.Join(formatLineArr, Linux_EOF)
 	if httpRaw == "" {
 		err = errors.Errorf("http raw is empty")
 		return "", err
@@ -414,8 +416,31 @@ func copyHttpHeader(header http.Header) (newHeader http.Header) {
 	return newHeader
 }
 
-func ReadResponse(HttpResponse []byte, r *http.Request) (response *http.Response, err error) {
-	byteReader := bytes.NewReader(HttpResponse)
+func FomrmatHttpResponseRaw(httpResponseRaw string) (formatHttpResponseRaw string, err error) {
+	formatHttpResponseRaw = strings.ReplaceAll(httpResponseRaw, Window_EOF, Linux_EOF)
+	formatHttpResponseRaw = strings.TrimLeft(formatHttpResponseRaw, "\r\n\t\v\f ") // 去除开头的的空格、制表符\r 等符号(第一行不能为空行，结束可以为空行)
+	lineArr := strings.Split(formatHttpResponseRaw, Linux_EOF)
+	formatLineArr := make([]string, 0)
+	for _, line := range lineArr {
+		formatLine := strings.TrimSpace(line) // 去除每行的空格、制表符\r 等符号
+		formatLineArr = append(formatLineArr, formatLine)
+	}
+	formatHttpResponseRaw = strings.Join(formatLineArr, Linux_EOF)
+	for i := 0; i < strings.Count(HTTP_HEAD_BODY_DELIM, Linux_EOF); i++ {
+		if strings.Contains(formatHttpResponseRaw, HTTP_HEAD_BODY_DELIM) {
+			break
+		}
+		formatHttpResponseRaw += Linux_EOF // 添加回车换行，直到找到HTTP_HEAD_BODY_DELIM为止
+	}
+	return formatHttpResponseRaw, nil
+}
+
+func ReadResponse(httpResponse []byte, r *http.Request) (response *http.Response, err error) {
+	FomrmatHttpResponseRaw, err := FomrmatHttpResponseRaw(string(httpResponse))
+	if err != nil {
+		return nil, err
+	}
+	byteReader := bytes.NewReader([]byte(FomrmatHttpResponseRaw))
 	reader := bufio.NewReader(byteReader)
 	response, err = http.ReadResponse(reader, r)
 	if err != nil {
