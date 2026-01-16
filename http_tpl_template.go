@@ -414,10 +414,17 @@ func copyHttpHeader(header http.Header) (newHeader http.Header) {
 	return newHeader
 }
 
-func ParseResponse(HttpResponse []byte, r *http.Request) (responseDTO *ResponseDTO, err error) {
+func ReadResponse(HttpResponse []byte, r *http.Request) (response *http.Response, err error) {
 	byteReader := bytes.NewReader(HttpResponse)
 	reader := bufio.NewReader(byteReader)
-	rsp, err := http.ReadResponse(reader, r)
+	response, err = http.ReadResponse(reader, r)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
+}
+func ParseResponse(HttpResponse []byte, r *http.Request) (responseDTO *ResponseDTO, err error) {
+	rsp, err := ReadResponse(HttpResponse, r)
 	if err != nil {
 		return nil, err
 	}
