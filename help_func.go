@@ -1,6 +1,7 @@
 package httpraw
 
 import (
+	"io"
 	"reflect"
 
 	"github.com/pkg/errors"
@@ -58,4 +59,18 @@ func DecodeResponseForJsonApiProtocol(response, businessCodePath, businessMessag
 	values := yaegijson.GetValuesFromJson(response, businessCodePath, businessMessagePath, dataPath)
 	businessCode, businessMessage, data = values[0], values[1], values[2]
 	return businessCode, businessMessage, data
+}
+
+func ReadAll(body io.Reader) (b []byte, err error) {
+	if body == nil {
+		return nil, nil
+	}
+	if readerCloser, ok := body.(io.ReadCloser); ok {
+		defer readerCloser.Close()
+	}
+	b, err = io.ReadAll(body)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
 }
