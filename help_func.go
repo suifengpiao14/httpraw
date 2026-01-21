@@ -1,7 +1,6 @@
 package httpraw
 
 import (
-	"io"
 	"reflect"
 
 	"github.com/pkg/errors"
@@ -60,4 +59,3 @@ func DecodeResponseForJsonApiProtocol(response, businessCodePath, businessMessag
 	businessCode, businessMessage, data = values[0], values[1], values[2]
 	return businessCode, businessMessage, data
 }
-
