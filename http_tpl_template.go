@@ -14,6 +14,7 @@ import (
 
 	"github.com/cbroglie/mustache"
 	"github.com/pkg/errors"
+	"github.com/spf13/cast"
 	"github.com/suifengpiao14/funcs"
 	"moul.io/http2curl"
 )
@@ -404,6 +405,14 @@ func (rDTO ResponseDTO) Copy() *ResponseDTO {
 	c.Headers = rDTO.Headers.Copy()
 
 	return &c
+}
+
+func (rDTO ResponseDTO) Response() (rsp *http.Response, err error) {
+	rsp = &http.Response{
+		StatusCode: cast.ToInt(rDTO.HttpStatus),
+		Header:     copyHttpHeader(rDTO.Headers.HttpHeaders()),
+	}
+	return rsp, nil
 }
 
 func copyHttpHeader(header http.Header) (newHeader http.Header) {
