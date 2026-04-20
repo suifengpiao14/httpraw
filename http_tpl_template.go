@@ -407,11 +407,35 @@ func (rDTO ResponseDTO) Copy() *ResponseDTO {
 	return &c
 }
 
-func (rDTO ResponseDTO) Response() (rsp *http.Response, err error) {
-	rsp = &http.Response{
-		StatusCode: cast.ToInt(rDTO.HttpStatus),
-		Header:     copyHttpHeader(rDTO.Headers.HttpHeaders()),
+func (rDTO ResponseDTO) Response(req *http.Request) (rsp *http.Response, err error) {
+	if rDTO.HttpStatus == "" {
+		return nil, errors.Errorf("HttpStatus is required")
 	}
+
+	statusCode := cast.ToInt(rDTO.HttpStatus)
+
+	rsp = &http.Response{
+		Status:        http.StatusText(statusCode),
+		StatusCode:    statusCode,
+		Proto:         "HTTP/1.1",
+		ProtoMajor:    1,
+		ProtoMinor:    1,
+		Header:        copyHttpHeader(rDTO.Headers.HttpHeaders()),
+		Body:          io.NopCloser(strings.NewReader(rDTO.Body)),
+		ContentLength: int64(len(rDTO.Body)),
+		Trailer:       make(http.Header),
+		Request:       req,
+	}
+
+	// Handle Request if present (reverse of DestructResponse line 309-315)
+	if rsp.Request == nil && rDTO.RequestDTO != nil {
+		req, err := rDTO.RequestDTO.Request()
+		if err != nil {
+			return nil, err
+		}
+		rsp.Request = req
+	}
+
 	return rsp, nil
 }
 
